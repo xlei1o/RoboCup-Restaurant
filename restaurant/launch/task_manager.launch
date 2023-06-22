@@ -1,0 +1,4 @@
+<launch>
+  <node name="workflow" type="task_manager.py" pkg="workflow" output="screen" />
+  <rosparam file="$(find workflow)/launch/config/way_points.yaml"/>
+</launch>

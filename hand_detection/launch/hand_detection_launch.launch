@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+  <param name="model_cfg"          value="$(find hand_detection)/models/cross-hands.cfg" />
+  <param name="model_weights"          value="$(find hand_detection)/models/cross-hands.weights" />
+  
+  <node name="hand_detection_node" type="hand_detection_node.py" pkg="hand_detection" output="screen" />
+
+</launch>
