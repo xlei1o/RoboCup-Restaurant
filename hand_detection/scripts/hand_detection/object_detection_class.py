@@ -8,6 +8,12 @@ from cv_bridge import CvBridge, CvBridgeError
 import rospkg
 from hand_detection.yolo import YOLO
 
+# Camera2Global
+import tf
+from sensor_msgs.msg import CameraInfo
+
+
+
 class ObjectDetection:
     def __init__(self,
                  input_rgb_image_topic="/xtion/rgb/image_raw",
@@ -23,6 +29,13 @@ class ObjectDetection:
         self.number = -1
         self.confidence = 0.5
         self.is_hand_msg = Bool()
+
+        # Parameters for coordinate transformation
+        self.camera_info_sub = rospy.Subscriber("/xtion/rgb/camera_info", CameraInfo, self.camera_info_callback)
+        self.listener = tf.TransformListener()
+        self.distoration = None
+        self.camera_info = None
+        self.camera_matrix = None
 
         if output_rgb_image_topic is not None:
             self.image_publisher = rospy.Publisher(output_rgb_image_topic, Image, queue_size=1)
@@ -46,6 +59,18 @@ def listen(self):
         self.yolo = YOLO(model_cfg, model_weights,) # might limit the detected classes
         self.yolo.size = int(self.size)
         self.yolo.confidence = float(self.confidence)
+
+def camera_info_callback(self, msg):
+        self.camera_info = msg
+        self.camera_matrix = np.array(msg.K).reshape((3, 3))
+        self.distortion = np.array(msg.D)
+
+def image_callback(self, msg):
+     if self.camera_info is None:
+        return
+     
+    self.image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
+    world_coordinates = self.convert_image_to_world_coordinates(self.image, self.camera_info)
 
 def callback(self, msg):
         """
