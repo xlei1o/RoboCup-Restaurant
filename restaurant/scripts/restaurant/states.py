@@ -6,6 +6,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from pal_interaction_msgs.msg import TtsAction, TtsGoal
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from darknet_ros_msgs.msg import BoundingBoxes
+from objects_msgs.msg import objects, single
 
 
 class Say(smach.State):
@@ -82,4 +84,55 @@ class LookAround(smach.State):
         if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
             return 'success'
         else:
+            return 'failure'
+        
+class ObjectDetection(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['success', 'failure','preempted'],input_keys=['grasp_ready', 'exist_objects'], output_keys=['exist_objects'])
+        self.object_pub = rospy.Publisher('/restaurant/objects', objects, queue_size=10)
+        self.names = None
+
+    def callback(self, box):
+        number = len(box.bounding_boxes)
+        msg = objects()
+        self.names = []
+        for i in range(number):
+            object = single()
+            width = box.bounding_boxes[i].xmax - box.bounding_boxes[i].xmin
+            height = box.bounding_boxes[i].xmin - box.bounding_boxes[i].ymin
+            object.name = box.bounding_boxes[i].Class
+            object.x = box.bounding_boxes[i].xmin + width
+            object.y = box.bounding_boxes[i].ymin + height
+            msg.Objects.append(object)
+            self.names.append(object.name)
+        self.object_pub.publish(msg)
+        
+    def execute(self, userdata):
+        rospy.Subscriber('/darknet_ros/bounding_boxes', BoundingBoxes, self.callback)
+        rospy.wait_for_message('/darknet_ros/bounding_boxes', BoundingBoxes)
+        userdata.exist_objects = self.names
+        if userdata.grasp_ready:
+            return 'preempted'
+        else:
+            return 'success'
+
+
+class CheckObjExist(smach.State):
+    def __init__(self, requre):
+        smach.State.__init__(self, outcomes=['success', 'failure'],
+                             input_keys=['exist_objects'],
+                             output_keys=['grasp_ready'])
+        self.requre = requre
+
+    def execute(self, userdata):
+        if self.requre in userdata.exist_objects:
+            userdata.grasp_ready = True
+            return 'success'
+        else: 
+            client = actionlib.SimpleActionClient('/tts', TtsAction)
+            client.wait_for_server()
+            goal = TtsGoal()
+            goal.rawtext.text = 'sorry we do not have ' + self.requre
+            goal.rawtext.lang_id = "en_GB"
+            client.send_goal_and_wait(goal)
             return 'failure'
