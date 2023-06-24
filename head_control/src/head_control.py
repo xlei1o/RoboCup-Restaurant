@@ -49,7 +49,7 @@ class Head:
         rospy.sleep(0.2/r)
     
 
-    def turning(client,num,d):
+    def turning(self,client,num,d):
         """
         Keep the head always facing the front
         ######################################
@@ -69,13 +69,13 @@ class Head:
             new_d = d-1
             print("next dire: ", new_d)
             wait_r = 2
-            print("done operation: ",goal_send(client,X,Y,wait_r)) 
+            print("done operation: ",self.goal_send(client,X,Y,wait_r)) 
         elif num == 2 and d < 2:
             X = 0.61376/2 #right
             new_d = d+1
             print("next dire: ", new_d)
             wait_r = 2
-            print("done operation: ",goal_send(client,X,Y,wait_r))
+            print("done operation: ",self.goal_send(client,X,Y,wait_r))
         elif num == 3 and d != 1: 
             if d < 1:
                 X = 0.61376/2 #right
@@ -85,7 +85,7 @@ class Head:
                 new_d = d-1
             print("next dire: ", new_d)
             wait_r = 2
-            print("done operation: ",goal_send(client,X,Y,wait_r))
+            print("done operation: ",self.goal_send(client,X,Y,wait_r))
         else:
             new_d = d
             print("next dire: ", new_d)
@@ -97,7 +97,7 @@ class Head:
             d = check['dire']
 
 
-    def headturning(msg,client):
+    def headturning(self,msg,client):
         """
         p: prermission to move the head
         dire: direction of the head
@@ -108,23 +108,39 @@ class Head:
         d = check['dire']
         if p == 1:
             if msg.angular.z > 0.0:
-                turning(client,1,d)
+                self.turning(client,1,d)
             elif msg.angular.z < 0.0:
-                turning(client,2,d)
+                self.turning(client,2,d)
             else:
-                turning(client,3,d)
+                self.turning(client,3,d)
         else:
             print("head cannot move.")
+    
+    def head_control(self,direction):
+        """
+        input: direction of the head(L,R)
+        """
+        client = actionlib.SimpleActionClient('head_controller/point_head_action', PointHeadAction)
+        client.wait_for_server()
+
+        if direction == "L":
+            self.goal_send(client,-(0.61376/2),0.0,2)
+        elif direction == "R":
+            self.goal_send(client,0.61376/2,0.0,2)
+        else:
+            print("wrong input")
+            
 
 
-    def controller():
+
+    def controller(self):
         rospy.init_node('head_control_client', anonymous=True)
         client = actionlib.SimpleActionClient('head_controller/point_head_action', PointHeadAction)
         client.wait_for_server()
         
-        print("done operation: ",goal_send(client,0.0,-(0.456729/3),2)) # make the head a little bit down
+        print("done operation: ", self.goal_send(client,0.0,-(0.456729/3),2)) # make the head a little bit down
 
-        rospy.Subscriber("mobile_base_controller/cmd_vel", Twist, headturning, client)
+        rospy.Subscriber("mobile_base_controller/cmd_vel", Twist, self.headturning, client)
 
         rospy.spin()
 
