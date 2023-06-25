@@ -1,0 +1,9 @@
+fixed_coordinates: {
+   storage_table: {x: 3.8, y: 3.4, z: 0.5, w: 0.42},
+
+   stand_by: {x: 4.58, y: 4.4, z: 0.5, w: 0.42},
+
+   table_left: {x: 6.23, y: 3.86, z: 0.5, w: 0.42},
+
+   table_right: {x: 4.64, y: 2.77, z: 0.5, w: 0.42}
+}

@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-    <arg name="map"            default="$(find restaurant)/map/map.yaml"/>
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)" />
+  <!-- Set the param that trajectory_execution_manager needs to find the controller plugin -->
+  <node name="restaurant_workflow" type="run.py" pkg="restaurant" output="screen" />
 
-    <!-- Launch rviz -->
- 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find restaurant)/launch/rviz/tiago.rviz" required="true" />
+  <!-- The rest of the params are specific to this plugin -->
+  <rosparam file="$(find restaurant)/config/fixed_coordinates.yaml"/>
 
 </launch>

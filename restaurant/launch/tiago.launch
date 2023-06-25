@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <!-- MAP -->
+    <arg name="map"            default="$(find restaurant)/map/map.yaml"/>
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)" />
+    <!---->
+
+
+    <!-- Navigation parameters -->
+    <rosparam file="$(find restaurant)/config/fixed_coordinates.yaml"/>
+
+
+    <!-- Launch YOLO  -->
+    <arg name="launch_prefix" default=""/>
+    <arg name="image" default="/xtion/rgb/image_raw" />
+    <arg name="yolo_weights_path"          default="$(find darknet_ros)/yolo_network_config/weights"/>
+    <arg name="yolo_config_path"           default="$(find darknet_ros)/yolo_network_config/cfg"/>
+    <arg name="ros_param_file"             default="$(find darknet_ros)/config/ros.yaml"/>
+    <arg name="network_param_file"         default="$(find darknet_ros)/config/yolov2-tiny.yaml"/>
+    <rosparam command="load" ns="darknet_ros" file="$(arg ros_param_file)"/>
+    <rosparam command="load" ns="darknet_ros" file="$(arg network_param_file)"/>
+    <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" launch-prefix="$(arg launch_prefix)">
+        <param name="weights_path"          value="$(arg yolo_weights_path)" />
+        <param name="config_path"           value="$(arg yolo_config_path)" />
+        <remap from="camera/rgb/image_raw"  to="$(arg image)" />
+    </node>
+    <!---->
+
+    <!-- Launch rviz -->
+ 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find restaurant)/launch/rviz/tiago.rviz" required="true" />
+
+</launch>

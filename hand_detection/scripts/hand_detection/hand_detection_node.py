@@ -38,9 +38,7 @@ class HandDetection:
             self.hand_publisher = None
 
 
-    def listen(self):
-        self.image_sub = rospy.Subscriber(self.input_rgb_image_topic, Image, self.callback)
-        rospy.loginfo("Hand detection node started.")
+    def listen(self):        
         rospack = rospkg.RosPack()
         package_path = rospack.get_path('hand_detection')
         model_cfg = package_path + '/models/cross-hands.cfg'
@@ -50,6 +48,10 @@ class HandDetection:
         self.yolo = YOLO(model_cfg, model_weights, ["hand"])
         self.yolo.size = int(self.size)
         self.yolo.confidence = float(self.confidence)
+        self.image_sub = rospy.Subscriber(self.input_rgb_image_topic, Image, self.callback)
+        rospy.loginfo("Hand detection node started.")
+        rospy.wait_for_message(self.input_rgb_image_topic, Image)
+
 
 
     def callback(self, msg):
@@ -116,7 +118,7 @@ class HandDetection:
             print('Waiting for ROS connection...')
         
     def result(self):
-        cv2.destroyAllWindows()
+        cv2.destroyWindow('Hand Detection Window')
         return self.is_hand
         
     
