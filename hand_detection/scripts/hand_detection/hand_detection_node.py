@@ -23,8 +23,9 @@ class HandDetection:
         self.yolo = None
         self.size = 416
         self.hands = -1
-        self.confidence = 0.5
+        self.confidence = 0.7
         self.is_hand_msg = Bool()
+        self.is_hand = False
 
         if output_rgb_image_topic is not None:
             self.image_publisher = rospy.Publisher(output_rgb_image_topic, Image, queue_size=1)
@@ -98,8 +99,9 @@ class HandDetection:
 
             # while not rospy.is_shutdown():
             # print(np.max(confidences))
-            if np.max(confidences)>=0.90:
+            if np.max(confidences)>=0.92:
                 self.is_hand_msg.data = True
+                self.is_hand = True
             else:
                 self.is_hand_msg.data = False
             
@@ -114,10 +116,8 @@ class HandDetection:
             print('Waiting for ROS connection...')
         
     def result(self):
-        if self.is_hand_msg.data:
-            return True
-        else: 
-            return False
+        cv2.destroyAllWindows()
+        return self.is_hand
         
     
     
