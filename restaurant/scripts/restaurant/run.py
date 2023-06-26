@@ -2,23 +2,29 @@ import rospy
 import smach
 import smach_ros
 
-from hand_detection.hand_detection_node import HandDetection
+
 from restaurant import states
 
 
 # main
 def main():
-    hand_detection_node = HandDetection()
-    hand_detection_node.listen()
     rospy.init_node('restaurant_workflow')
     # Create a SMACH state machine  
     sm = smach.StateMachine(outcomes=['succeeded', 'failure', 'preempted'])
     # Define user data for state machine
     sm.userdata.grasp_ready = False
+
+    _standby = rospy.get_param('/fixed_coordinates/stand_by')
+    _storeageTable = rospy.get_param('/fixed_coordinates/storage_table')
+    _leftTable = rospy.get_param('/fixed_coordinates/table_left')
+    _rightTable = rospy.get_param('/fixed_coordinates/table_right')
+
+
+
     # Open the container
     with sm:
         
-        smach.StateMachine.add('NAV_TO_STOREAGE', states.Navigation([1.0,-1.1]),
+        smach.StateMachine.add('NAV_TO_STOREAGE', states.Navigation(_storeageTable),
                                transitions={'success': 'OBJ_DETECTION',
                                             'failure': 'failure'})
         
@@ -27,7 +33,7 @@ def main():
                                             'preempted': 'GRASP',
                                             'failure': 'failure'})
         
-        smach.StateMachine.add('STAND_BY', states.Navigation([1.0,-1.1]),
+        smach.StateMachine.add('STAND_BY', states.Navigation(_standby),
                                transitions={'success': 'LOOK_LEFT',
                                             'failure': 'failure'})
         
@@ -39,37 +45,34 @@ def main():
                                transitions={'success': 'CALLING_RIGHT',
                                             'failure': 'LOOK_LEFT'})
         
-        smach.StateMachine.add('CALLING_LEFT', states.Calling(hand_detection_node),
+        smach.StateMachine.add('CALLING_LEFT', states.Calling(),
                                transitions={'success': 'NAVAGATION_LEFT',
                                             'failure': 'LOOK_RIGHT'})
         
-        smach.StateMachine.add('CALLING_RIGHT', states.Calling(hand_detection_node),
+        smach.StateMachine.add('CALLING_RIGHT', states.Calling(),
                                transitions={'success': 'NAVAGATION_RIGHT',
                                             'failure': 'LOOK_LEFT'})
         
-        smach.StateMachine.add('NAVAGATION_LEFT', states.Navigation([1.0,-1.1]),
+        smach.StateMachine.add('NAVAGATION_LEFT', states.Navigation(_leftTable),
                                transitions={'success': 'ASK',
                                             'failure': 'failure'})
         
-        smach.StateMachine.add('NAVAGATION_RIGHT', states.Navigation([1.0,-1.1]),
-                               transitions={'success': 'failure',
+        smach.StateMachine.add('NAVAGATION_RIGHT', states.Navigation(_rightTable),
+                               transitions={'success': 'ASK',
                                             'failure': 'failure'})
 
         smach.StateMachine.add('ASK', states.Say('Hello what can I do for you'),
-                               transitions={'success': 'ASK',
+                               transitions={'success': 'HEAR',
                                             'failure': 'failure'})
         
         smach.StateMachine.add('HEAR', states.Hear(),
                                transitions={'success': 'CHECK',
                                             'failure': 'ASK'})
         
-        smach.StateMachine.add('CHECK', states.CheckObjExist(),
+        smach.StateMachine.add('CHECK', states.CheckObjExist('apple'),
                                transitions={'success': 'NAV_TO_STOREAGE',
                                             'failure': 'ASK'})
         
-        smach.StateMachine.add('CHECK', states.CheckObjExist(),
-                               transitions={'success': 'NAV_TO_STOREAGE',
-                                            'failure': 'failure'})
         
         smach.StateMachine.add('GRASP', states.Pickup(),
                                transitions={'success': 'NAV_TO_CUSTOMER',
@@ -81,6 +84,9 @@ def main():
         
 
         ###DEBUG
+        # smach.StateMachine.add('CALLING_LEFT', states.Calling(),
+        #                        transitions={'success': 'failure',
+        #                                     'failure': 'OBDE'})
         # smach.StateMachine.add('OBDE', states.ObjectDetection(),
         #                        transitions={'success': 'CK',
         #                                     'failure': 'failure'})

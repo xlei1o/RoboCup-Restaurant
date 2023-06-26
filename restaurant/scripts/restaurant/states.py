@@ -1,6 +1,7 @@
 import rospy
 import smach
 import actionlib
+import cv2
 
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from pal_interaction_msgs.msg import TtsAction, TtsGoal
@@ -8,6 +9,8 @@ from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryG
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from darknet_ros_msgs.msg import BoundingBoxes
 from objects_msgs.msg import objects, single
+from hand_detection.hand_detection_node import HandDetection
+
 
 
 class Say(smach.State):
@@ -37,10 +40,10 @@ class Navigation(smach.State):
         client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         client.wait_for_server()
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "base_footprint" 
-        goal.target_pose.pose.position.x = 0.5
-        goal.target_pose.pose.position.y = 0.0
-        goal.target_pose.pose.orientation.w = 1.0
+        goal.target_pose.header.frame_id = "map" 
+        goal.target_pose.pose.position.x = self.coordinate['x']
+        goal.target_pose.pose.position.y = self.coordinate['y']
+        goal.target_pose.pose.orientation.w = self.coordinate['w']
         client.send_goal(goal)
         client.wait_for_result()
         if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
@@ -50,16 +53,16 @@ class Navigation(smach.State):
 
 
 class Calling(smach.State):
-    def __init__(self,hd):
+    def __init__(self):
         smach.State.__init__(self, outcomes=['success', 'failure'])
-        self.hd = hd
+        self.hand_detection_node = HandDetection()
+
     def execute(self, userdata):
         rospy.loginfo('Looking for customer raising hand...')
-        # hand_detection_node = HandDetection()
-        # rospy.sleep(5)
-        # hand_detection_node.listen()
-        rospy.sleep(5)
-        if self.hd.result():
+
+        self.hand_detection_node.listen()
+        rospy.sleep(5)  
+        if self.hand_detection_node.result():       
             return 'success'
         else:
             return 'failure'
