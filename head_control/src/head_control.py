@@ -144,8 +144,8 @@ class Head:
 
         rospy.spin()
 
-    if __name__ == '__main__':
-        try:
-            controller()
-        except rospy.ROSInterruptException:
-            pass   
+if __name__ == '__main__':
+    try:
+        p=Head().controller()
+    except rospy.ROSInterruptException:
+        pass   
