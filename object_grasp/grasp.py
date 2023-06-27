@@ -45,7 +45,68 @@ class Grasp:
 
         rospy.loginfo("pre-grasp pose: {}".format(self.grasp_pose))
 
-        self.move_group.set_pose_target(object_pose.pose)
+        self.move_group.set_pose_target(object_pose.pose) # quaternion
+
+        # move the manipulator to the pre-grasp pose
+        self.move_group.go(wait=True)
+
+        # stop the manipulator at the pre-grasp pose
+        self.move_group.stop()
+
+        # delete the pre-grasp pose
+        self.move_group.clear_pose_targets()
+
+        return True
+    
+    def grasp(self,msg):
+        """
+        pick up the object
+        """
+
+        # move to the grasp pose
+        rospy.loginfo("grasp pose: {}".format(self.grasp_pose))
+
+        self.move_group.set_pose_target(self.grasp_pose)
+
+        self.move_group.go(wait=True)
+
+        self.move_group.stop()
+
+        self.move_group.clear_pose_targets()
+
+
+        # close the gripper
+        rospy.loginfo("close the gripper")
+
+        close_gripper()
+
+
+
+
+    def close_gripper(self):
+        """
+        close the gripper
+        """
+        # close the gripper
+        gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
+
+        # set a loop to close the gripper
+        for i in range(10):
+            trajctory = JointTrajectory()
+            trajctory.joint_names = ['gripper_left_finger_joint', 'gripper_right_finger_joint']
+
+            point = JointTrajectoryPoint()
+            # gripper joints cfg
+            point.positions = [0.0, 0.0]
+
+            # set the time of the gripper to close
+            point.time_from_start = rospy.Duration(0.5) # ToDO
+
+            trajctory.points.append(point)
+
+            gripper_controller.publish(trajctory)
+
+            rospy.sleep(0.5)
 
 
 
