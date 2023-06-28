@@ -26,6 +26,8 @@ class Grasp:
         make tiago put its hands at the right side of the object
 
         return: operation status(success or fail)
+
+        input: object_pose: the pose of the object >>>> geometry_msgs/Pose
         """
         
 
