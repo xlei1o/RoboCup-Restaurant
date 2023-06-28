@@ -17,32 +17,32 @@ class FindObject3D:
         pcd.points = o3d.utility.Vector3dVector(xyz)
         # downsampled = pcd.voxel_down_sample(voxel_size=0.01)
         # outlier_removed, _ = pcd.remove_radius_outlier(nb_points=10, radius=0.1)
-        outlier_removed, _ = pcd.remove_statistical_outlier(nb_neighbors=100, std_ratio=2.0)
+        # outlier_removed, _ = pcd.remove_statistical_outlier(nb_neighbors=100, std_ratio=2.0)
 
-        _, inliers = outlier_removed.segment_plane(distance_threshold=0.1, ransac_n=3, num_iterations=1000)
-        plane_removed = outlier_removed.select_by_index(inliers, invert=True)
+        # _, inliers = outlier_removed.segment_plane(distance_threshold=0.1, ransac_n=3, num_iterations=1000)
+        # plane_removed = outlier_removed.select_by_index(inliers, invert=True)
 
-        with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm:
-            labels = np.array(plane_removed.cluster_dbscan(eps=0.02, min_points=10, print_progress=True))
+        # with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm:
+        #     labels = np.array(plane_removed.cluster_dbscan(eps=0.02, min_points=10, print_progress=True))
 
-        # max_label = labels.max()
-        # print(f"point cloud has {max_label + 1} clusters")
-        # colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
-        # colors[labels < 0] = 0
-        # plane_removed.colors = o3d.utility.Vector3dVector(colors[:, :3])
+        # # max_label = labels.max()
+        # # print(f"point cloud has {max_label + 1} clusters")
+        # # colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+        # # colors[labels < 0] = 0
+        # # plane_removed.colors = o3d.utility.Vector3dVector(colors[:, :3])
 
-        self.centroids = []
-        unique_labels = np.unique(labels)
-        points = np.asarray(plane_removed.points)
-        for label in unique_labels:
-            cluster_indices = np.where(labels == label)[0]
-            cluster_points = points[cluster_indices]
+        # self.centroids = []
+        # unique_labels = np.unique(labels)
+        # points = np.asarray(plane_removed.points)
+        # for label in unique_labels:
+        #     cluster_indices = np.where(labels == label)[0]
+        #     cluster_points = points[cluster_indices]
 
-            centroid = np.mean(cluster_points, axis=0)
-            self.centroids.append(centroid)
-            # print("Cluster {}: Centroid = {}".format(label, centroid))
+        #     centroid = np.mean(cluster_points, axis=0)
+        #     self.centroids.append(centroid)
+        #     # print("Cluster {}: Centroid = {}".format(label, centroid))
         
-        # o3d.visualization.draw(plane_removed)  #for debug
+        o3d.visualization.draw(pcd)  #for debug
         print(self.centroids)
     def result(self):
         return self.centroids

@@ -118,7 +118,6 @@ class HandDetection:
             print('Waiting for ROS connection...')
         
     def result(self):
-        cv2.destroyWindow('Hand Detection Window')
         return self.is_hand
         
     
