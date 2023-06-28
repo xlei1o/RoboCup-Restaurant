@@ -78,8 +78,59 @@ class Grasp:
         # close the gripper
         rospy.loginfo("close the gripper")
 
-        close_gripper()
+        self.close_gripper()
 
+        rospy.sleep(1)
+
+        # define post-grasp pose
+        post_grasp_pose = copy.deepcopy(self.grasp_pose)
+
+        post_grasp_pose.position.z += 0.2 # ToDO: determine the value
+
+        # move to the post-grasp pose
+        rospy.loginfo("post-grasp pose: {}".format(post_grasp_pose))
+
+        self.move_group.set_pose_target(post_grasp_pose)
+
+        self.move_group.go(wait=True)
+
+        self.move_group.stop()
+
+        self.move_group.clear_pose_targets()
+
+
+    def place(self,table_position):
+
+        rospy.loginfo("place the object")
+
+        self.move_group.set_pose_target(table_position)
+
+        self.move_group.go(wait=True)
+
+        self.move_group.stop()
+
+        self.move_group.clear_pose_targets()
+
+        # open the gripper
+        rospy.loginfo("open the gripper")
+
+        self.open_gripper()
+
+        # move away from the table
+
+        rospy.loginfo("move away from the table")
+
+        table_position.position.y -= 0.2 # ToDO: determine the value
+
+        self.move_group.set_pose_target(table_position)
+
+        self.move_group.go(wait=True)
+
+        self.move_group.stop()
+
+        self.move_group.clear_pose_targets()
+
+        rospy.sleep(1)
 
 
 
@@ -107,6 +158,49 @@ class Grasp:
             gripper_controller.publish(trajctory)
 
             rospy.sleep(0.5)
+
+    def open_gripper(self):
+
+        gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
+
+        for i in range(10):
+            trajctory = JointTrajectory()
+            trajctory.joint_names = ['gripper_left_finger_joint', 'gripper_right_finger_joint']
+
+            point = JointTrajectoryPoint()
+            # gripper joints cfg
+            point.positions = [0.044, 0.044]
+
+            # set the time of the gripper to close
+            point.time_from_start = rospy.Duration(0.5)
+
+            trajctory.points.append(point)
+
+            gripper_controller.publish(trajctory)
+
+            rospy.sleep(0.2)
+
+if __name__ == "__main__":
+
+    rospy.init_node("grasp_object")
+
+    moveit_commander.roscpp_initialize(sys.argv)
+
+    pre_object_service = rospy.Service(
+        "/pre_object", ObjectDetection, Grasp.preparation)
+    
+    grasp_object_service = rospy.Service(
+        "grasp_object", Empty, Grasp.pick)
+    
+    place_object_service = rospy.Service(
+        "place_object", Empty, Grasp.place)
+    
+    rospy.loginfo("Grasp_Object is ready.")
+
+    Grasp.open_gripper()
+
+    rospy.spin()
+
 
 
 
