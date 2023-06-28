@@ -13,6 +13,7 @@ add_message_files(
     FILES
     objects.msg
     single.msg
+    headPos.msg
 )
 
 generate_messages(
