@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>grasp_object</name>
+  <name>object_grasp</name>
   <version>0.0.0</version>
   <description>The Object_grasp package</description>
 
