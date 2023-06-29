@@ -48,7 +48,7 @@ if __name__ == '__main__':
     rospy.init_node('GetAbs')
 
     # service pass relative to abs position info on --> geometry_msgs/PoseStamped to communicate with other node
-    absolute_service = rospy.Service("/sofar/rel_to_absolute_pose",Rel2Abs,GetAbs().getAbs)
+    absolute_service = rospy.Service("grasp_object/rel_to_absolute_pose",Rel2Abs,GetAbs().getAbs)
 
     rospy.loginfo("GetAbsolutePose")
     
