@@ -5,13 +5,14 @@ from tf.transformations import *
 from tf2_geometry_msgs import *
 import moveit_commander
 import sys
+import functools
 
-from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import Quaternion,Pose
 from std_srvs.srv import Empty, EmptyResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 # asuming we have server to detect the object and return the coordinates
-from .srv import ObjectDetection, ObjectDetectionResponse
+from ..srv import Pre_object,Rel2Abs
 
 
 class Grasp:
@@ -23,6 +24,12 @@ class Grasp:
         self.robot = moveit_commander.RobotCommander()
         self.grasp_pose = None
         self.move_group = moveit_commander.MoveGroupCommander("arm_torsor")
+        
+        self.preparation(self)
+        self.grasp(self)
+        self.place(self)
+        self.open_gripper(self)
+        self.close_gripper(self)
 
     def preparation(self,object_pose):
         """
@@ -38,12 +45,14 @@ class Grasp:
         object_pose.pose.orientation = Quaternion(0.5,0.5,0.5,0.5)
 
         # the vertival pose of the hand
-        object_pose.pose.position.z += rospy.get_param('z_axis_offset') # at the position z of the object
+        # object_pose.pose.position.z += rospy.get_param('z_axis_offset') # at the position z of the object
+        object_pose.pose.position.z +=1
 
         self.grasp_pose = copy.deepcopy(object_pose.pose) 
 
         # the distance between the hand and the object
-        self.grasp_pose.position.y -= rospy.get_param('y_axis_offset') 
+        # self.grasp_pose.position.y -= rospy.get_param('y_axis_offset') 
+        self.grasp_pose.position.y -=1
 
         # pre-grasp pose
         object_pose.position.y -=0.15 
@@ -191,14 +200,27 @@ if __name__ == "__main__":
 
     moveit_commander.roscpp_initialize(sys.argv)
 
+    a = Grasp()
+
+    object_pose = Pose()
+    object_pose.position.x =1.0
+    object_pose.position.y =1.0
+    object_pose.position.z =1.0
+    object_pose.orientation.x = 0
+    object_pose.orientation.y = 0
+    object_pose.orientation.z = 0
+    object_pose.orientation.w = 0
+
+
+    
     pre_object_service = rospy.Service(
-        "grasp_object/pre_object", ObjectDetection, Grasp.preparation)
+        "grasp_object/pre_object", Pre_object, a.preparation(object_pose))
     
     grasp_object_service = rospy.Service(
-        "grasp_object/grasp_object", Empty, Grasp.pick)
+        "grasp_object/grasp_object", Empty, a.grasp)
     
-    place_object_service = rospy.Service(
-        "grasp_object/place_object", Empty, Grasp.place)
+    # place_object_service = rospy.Service(
+    #     "grasp_object/place_object", Empty, Grasp.place)
     
     rospy.loginfo("Grasp_Object is ready.")
 
