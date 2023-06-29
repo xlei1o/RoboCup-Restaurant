@@ -15,6 +15,9 @@ from .srv import ObjectDetection, ObjectDetectionResponse
 
 
 class Grasp:
+    """
+    input: object pose
+    """
     def __init__(self):
         self.target_abs_pose = None
         self.robot = moveit_commander.RobotCommander()
@@ -189,13 +192,13 @@ if __name__ == "__main__":
     moveit_commander.roscpp_initialize(sys.argv)
 
     pre_object_service = rospy.Service(
-        "/pre_object", ObjectDetection, Grasp.preparation)
+        "grasp_object/pre_object", ObjectDetection, Grasp.preparation)
     
     grasp_object_service = rospy.Service(
-        "grasp_object", Empty, Grasp.pick)
+        "grasp_object/grasp_object", Empty, Grasp.pick)
     
     place_object_service = rospy.Service(
-        "place_object", Empty, Grasp.place)
+        "grasp_object/place_object", Empty, Grasp.place)
     
     rospy.loginfo("Grasp_Object is ready.")
 

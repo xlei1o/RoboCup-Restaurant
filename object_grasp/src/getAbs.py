@@ -7,6 +7,10 @@ from geometry_msgs.msg import Pose, Quaternion, PointStamped
 from .srv import Rel2Abs, RelToAbsoluteResponse
 
 class GetAbs:
+    """
+    input: relative position of the object
+    oupur: absolute position of the object
+    """
     def __init__(self):
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
