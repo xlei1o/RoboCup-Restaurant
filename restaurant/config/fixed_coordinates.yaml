@@ -1,9 +1,11 @@
 fixed_coordinates: {
-   storage_table: {x: 3.8, y: 3.4, z: 0.5, w: 0.42},
+   storage_table: {x: -0.627, y: -3.4, z: 0.5, w: 0.0},
 
-   stand_by: {x: 4.58, y: 4.4, z: 0.5, w: 0.42},
+   stand_by: {x: -1.0272, y: -1.5166, z: 0.5, w: 0.998877},
 
    table_left: {x: -1.43, y: 0.09, z: 0.5, w: 0.42},
 
    table_right: {x: 2.09, y: 1.82, z: 0.5, w: 0.42}
 }
+
+wit_api_key: GG424C7762FEFSTDI2BWR3MZQMO6UPUP
