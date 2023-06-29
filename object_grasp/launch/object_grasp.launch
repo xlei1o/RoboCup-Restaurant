@@ -3,4 +3,5 @@
   <include file="$(find object_grasp)/launch/object_grasp.launch"/>
   <arg name="node_start_delay" default="15.0" />
   <node pkg="object_grasp" type="object_grasp.py" name="PickObject" output="screen" required="true"/>
+  <node pkg="object_grasp" type="getAbs.py" name="GetAbs" output="screen" required="true"/>
 </launch>  
