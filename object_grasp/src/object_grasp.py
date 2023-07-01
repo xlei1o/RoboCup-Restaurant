@@ -226,7 +226,7 @@ if __name__ == "__main__":
         "restaurant/grasp_object", Empty, a.grasp)
     
     place_object_service = rospy.Service(
-        "grasp_object/place_object", Empty, a.place)
+        "restaurant/place_object", Empty, a.place)
     
     rospy.loginfo("Grasp_Object is ready.")
 
