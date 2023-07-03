@@ -13,7 +13,12 @@ add_message_files(
     FILES
     objects.msg
     single.msg
-    headPos.msg
+)
+
+add_service_files(
+  DIRECTORY srv
+  FILES
+  getCoordinate.srv
 )
 
 generate_messages(
