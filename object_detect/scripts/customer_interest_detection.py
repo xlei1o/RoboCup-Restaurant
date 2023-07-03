@@ -61,14 +61,14 @@ class Customer_Interest:
                     customer_interest = True
                     break
 
-                # if self.determine_interest(image, pose_landmarks, face_landmarks):
-                #     cv2.putText(image, "customer_call", (50, 50),
-                #                 cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
-                # else:
-                #     cv2.putText(image, "nothing", (50, 50),
-                #                 cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 3)
-        # image_message = self.bridge.cv2_to_imgmsg(image, encoding="rgb8")
-        # self.image_pub.publish(image_message)
+                if self.determine_interest(image, pose_landmarks, face_landmarks):
+                    cv2.putText(image, "customer_call", (50, 50),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
+                else:
+                    cv2.putText(image, "nothing", (50, 50),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 3)
+        image_message = self.bridge.cv2_to_imgmsg(image, encoding="rgb8")
+        self.image_pub.publish(image_message)
         if customer_interest:
             self.pub.publish("True")
         else:
@@ -158,8 +158,9 @@ class Customer_Interest:
                                                                       dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
         (R, j) = cv2.Rodrigues(rotation_vector)
         roll, pitch, yaw = self.rotationMatrixToEulerAngles(R)
+        print(f"pitch: {pitch}  yaw: {yaw}")
 
-        if pitch < 5.0 and yaw < 5.0:
+        if pitch < 25.0 and yaw < 25.0:
             return True
         else:
             return False

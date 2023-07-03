@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>  
+  
+  <node pkg="object_detect" type="customer_interest_server.py" name="customer_interest_node" output="screen"/>
+
+</launch>  
