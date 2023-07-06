@@ -1,0 +1,8 @@
+numpy
+mediapipe
+tensorflow
+opencv_python
+
+smach
+smach_ros
+opencv_python
