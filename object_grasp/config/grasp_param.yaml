@@ -4,6 +4,9 @@ z_axis_offset: 0.1
 y_axis_offset: 0.3
 #height to be reached with the object in the gripper
 grasp_height: 0.3
+
+
+
 # right rotation duration (in ds)
 right_rotation_index: 21
 # left rotation duration (in ds)

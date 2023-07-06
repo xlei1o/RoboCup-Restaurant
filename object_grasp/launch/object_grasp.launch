@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<launch>  
+<launch> 
+  <rosparam command="load" file="$(find object_grasp)/config/pick_motions.yaml" /> 
+  <rosparam command="load" file="$(find object_grasp)/config/grasp_param.yaml" /> 
+  
+  <include file="$(find object_grasp)/launch/tiago_bringup.launch"/>
+
   <arg name="node_start_delay" default="15.0" />
   <node pkg="object_grasp" type="findObject.py" name="FindObject" output="screen" required="true"/>
   <node pkg="object_grasp" type="object_grasp.py" name="PickObject" output="screen" required="true"/>

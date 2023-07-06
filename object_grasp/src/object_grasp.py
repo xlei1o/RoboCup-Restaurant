@@ -149,7 +149,7 @@ class Grasp:
 
         rospy.loginfo("move away from the table")
 
-        table_position.position.y -= 0.2 # ToDO: determine the value
+        table_position.position.z += 0.2 # ToDO: determine the value
 
         self.move_group.set_pose_target(table_position)
 
@@ -167,7 +167,7 @@ class Grasp:
 
 
 
-    def close_gripper(self):
+    def close_gripper():
         """
         close the gripper
         """
@@ -192,7 +192,7 @@ class Grasp:
 
             rospy.sleep(0.5)
 
-    def open_gripper(self):
+    def open_gripper():
 
         gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
 
@@ -230,6 +230,16 @@ if __name__ == "__main__":
     
     place_object_service = rospy.Service(
         "restaurant/place_object", Empty, a.place)
+    
+    # ps = Pose()
+    # ps.header.frame_id = 'base_footprint'
+    # ps.pose.position.x = 1.0
+    # ps.pose.position.y = 0.0
+    # ps.pose.position.z = 1.0
+    # ps.pose.orientation.w = 1.0
+    # while not rospy.is_shutdown():
+    #     sg.create_grasps_from_object_pose(ps)
+    #     rospy.sleep(1.0)
     
     rospy.loginfo("Grasp_Object is ready.")
 
