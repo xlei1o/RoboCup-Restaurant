@@ -24,6 +24,19 @@ class Grasp:
         self.robot = moveit_commander.RobotCommander()
         self.grasp_pose = None
         self.move_group = moveit_commander.MoveGroupCommander("arm_torsor")
+
+    def get_pose(coordinates):
+        """
+        get the pose of the object
+
+        return: the coordinates of the object >>>> geometry_msgs/Pose
+        """
+        pose = Pose()
+        pose.position.x = coordinates[0]
+        pose.position.y = coordinates[1]
+        pose.position.z = coordinates[2]
+
+        return pose
         
 
     def preparation(self,object_pose):
@@ -41,19 +54,19 @@ class Grasp:
 
         # the vertival pose of the hand
         # object_pose.pose.position.z += rospy.get_param('z_axis_offset') # at the position z of the object
+        # because the vertival pose is the most safe pose
         object_pose.pose.position.z += rospy.get_param('z_axis_offset')
 
         # make the grasp pose same as the object pose
         self.grasp_pose = copy.deepcopy(object_pose.pose) 
 
         # the distance between the hand and the object
-        # self.grasp_pose.position.y -= rospy.get_param('y_axis_offset') 
         self.grasp_pose.position.y -= rospy.get_param('y_axis_offset')
 
         # pre-grasp pose
         object_pose.position.y -=0.15 
 
-        rospy.loginfo("pre-grasp pose: {}".format(self.grasp_pose))
+        rospy.loginfo("pre-grasp pose")
 
         self.move_group.set_pose_target(object_pose.pose) # quaternion
 
@@ -76,7 +89,7 @@ class Grasp:
         """
 
         # move to the grasp pose
-        rospy.loginfo("grasp pose: {}".format(self.grasp_pose))
+        rospy.loginfo("grasp pose")
 
         self.move_group.set_pose_target(self.grasp_pose)
 
@@ -100,7 +113,7 @@ class Grasp:
         post_grasp_pose.position.z += rospy.get_param('grasp_height') # ToDO: determine the value
 
         # move to the post-grasp pose
-        rospy.loginfo("post-grasp pose: {}".format(post_grasp_pose))
+        rospy.loginfo("post-grasp pose")
 
         self.move_group.set_pose_target(post_grasp_pose)
 
@@ -207,16 +220,6 @@ if __name__ == "__main__":
     moveit_commander.roscpp_initialize(sys.argv)
 
     a = Grasp()
-
-    object_pose = Pose()
-    object_pose.position.x =1.0
-    object_pose.position.y =1.0
-    object_pose.position.z =1.0
-    object_pose.orientation.x = 0
-    object_pose.orientation.y = 0
-    object_pose.orientation.z = 0
-    object_pose.orientation.w = 0
-
 
     
     pre_object_service = rospy.Service(

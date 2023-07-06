@@ -109,7 +109,7 @@ if __name__ == '__main__':
     pub_target_rel_pose = rospy.Publisher(
         '/restaurant/target_pose/relative', Pose, queue_size=1)
 
-    # publish to target_pose/relative/stamped to display position of object detected in RVIZ
+    # publish to restaurant/target_pose/relative/stamped to display position of object detected in RVIZ
     pub_target_rel_pose_stamped = rospy.Publisher(
         '/restaurant/target_pose/relative/stamped', PoseStamped, queue_size=1)   
 
