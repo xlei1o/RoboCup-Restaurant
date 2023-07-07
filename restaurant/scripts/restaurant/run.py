@@ -22,12 +22,11 @@ def main():
 
     WIT_API_KEY = rospy.get_param('/wit_api_key')
     ########## Starting Task Manager #######
-    hd = HandDetection()  #hand detection
-    hd.listen()
 
     wr = WitRos(WIT_API_KEY)  # speech recognition
     wr.start()
 
+    # rospy.sleep(10)
     # Open the container
     with sm:
         
@@ -91,47 +90,43 @@ def main():
         
     # sm.set_initial_state(['NAV_TO_STOREAGE'])
 ###########################################################DEBUG###############################################################
-        # smach.StateMachine.add('CALLING_LEFT', states.Calling(),
-        #                        transitions={'success': 'failure',
-        #                                     'failure': 'OBDE'})
-        # smach.StateMachine.add('OBDE', states.ObjectDetection(),
-        #                        transitions={'success': 'CK',
-        #                                     'failure': 'failure'})
-        
-        # smach.StateMachine.add('CK', states.CheckObjExist('bottle'),
-        #                        transitions={'success': 'failure',
-        #                                     'failure': 'failure'})
-        # smach.StateMachine.add('LOOK_LEFT', states.LookAround(_leftTable),
-        #                        transitions={'success': 'CALLING_LEFT',
-        #                                     'failure': 'failure'})
-        # smach.StateMachine.add('LOOK_RIGHT', states.LookAround(_rightTable),
-        #                        transitions={'success': 'CALLING_RIGHT',
-        #                                     'failure': 'failure'})
-        # smach.StateMachine.add('CALLING_LEFT', states.Calling(hd),
-        #                        transitions={'success': 'NAVAGATION_LEFT',
-        #                                     'failure': 'LOOK_RIGHT'})
-        # smach.StateMachine.add('CALLING_RIGHT', states.Calling(hd),
-        #                        transitions={'success': 'failure',
-        #                                     'failure': 'LOOK_LEFT'})
-        # smach.StateMachine.add('NAVAGATION_LEFT', states.Navigation(_leftTable),
-        #                        transitions={'success': 'ASK',
-        #                                     'failure': 'failure'})
-        # smach.StateMachine.add('ASK', states.Say('Hello what can I do for you'),
-        #                        transitions={'success': 'CHECK',
-        #                                     'failure': 'failure'})
-        # smach.StateMachine.add('CHECK', states.CheckObjExist('apple'),
-        #                        transitions={'success': 'failure',
-        #                                     'failure': 'failure'})
+
         smach.StateMachine.add('NAV_TO_STOREAGE', states.Navigation(_storeageTable),
                                transitions={'success': 'OBJ_DETECTION',
                                             'failure': 'failure'})
+        
         smach.StateMachine.add('OBJ_DETECTION', states.ObjectDetection(),
                                transitions={'success': 'STAND_BY',
                                             'failure': 'failure'})
         smach.StateMachine.add('STAND_BY', states.Navigation(_standby),
-                               transitions={'success': 'ASK',
+                               transitions={'success': 'LOOK_LEFT',
                                             'failure': 'failure'})
-        smach.StateMachine.add('ASK', states.Conversation('Hello what can I do for you'),
+        
+        smach.StateMachine.add('LOOK_LEFT', states.LookAround(0.7),
+                               transitions={'success': 'CALLING_LEFT',
+                                            'failure': 'LOOK_RIGHT'})
+        
+        smach.StateMachine.add('LOOK_RIGHT', states.LookAround(-0.7),
+                               transitions={'success': 'CALLING_RIGHT',
+                                            'failure': 'LOOK_LEFT'})
+        
+        smach.StateMachine.add('CALLING_LEFT', states.Calling(),
+                               transitions={'success': 'NAVAGATION_LEFT',
+                                            'failure': 'LOOK_RIGHT'})
+        
+        smach.StateMachine.add('CALLING_RIGHT', states.Calling(),
+                               transitions={'success': 'NAVAGATION_RIGHT',
+                                            'failure': 'LOOK_LEFT'})
+        
+        smach.StateMachine.add('NAVAGATION_LEFT', states.Navigation(_leftTable),
+                               transitions={'success': 'CONVERSATION',
+                                            'failure': 'failure'})
+        
+        smach.StateMachine.add('NAVAGATION_RIGHT', states.Navigation(_rightTable),
+                               transitions={'success': 'CONVERSATION',
+                                            'failure': 'failure'})
+        
+        smach.StateMachine.add('CONVERSATION', states.Conversation('Hello what can I do for you'),
                                transitions={'success': 'failure',
                                             'failure': 'failure'})
     # Use a introspection for visulize the state machine

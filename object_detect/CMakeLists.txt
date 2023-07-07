@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   image_geometry
   image_transport
-  ros_numpy
   roscpp
   rospy
   sensor_msgs
@@ -113,7 +112,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES object_detect
-#  CATKIN_DEPENDS cv_bridge geometry_msgs image_geometry image_transport ros_numpy roscpp rospy sensor_msgs std_msgs tf tf_conversions
+#  CATKIN_DEPENDS cv_bridge geometry_msgs image_geometry image_transport roscpp rospy sensor_msgs std_msgs tf tf_conversions
 #  DEPENDS system_lib
 )
 

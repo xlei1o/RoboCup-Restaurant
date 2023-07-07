@@ -4,13 +4,14 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Grid1/Offset1
         - /TF1/Frames1
         - /Sensors1
         - /Sensors1/Sonars1
         - /Map1
       Splitter Ratio: 0.7210401892662048
-    Tree Height: 424
+    Tree Height: 142
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -207,19 +208,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        gripper_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         gripper_grasping_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        gripper_grasping_frame_Y:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        gripper_grasping_frame_Z:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -285,6 +274,16 @@ Visualization Manager:
           Show Trail: false
           Value: true
         wheel_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wrist_ft_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wrist_ft_tool_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -377,7 +376,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -392,7 +391,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Class: rviz/Image
@@ -462,7 +461,7 @@ Visualization Manager:
       Marker Topic: /labeling/text_markers
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: moveit_rviz_plugin/PlanningScene
@@ -629,19 +628,7 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          gripper_base_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           gripper_grasping_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          gripper_grasping_frame_Y:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          gripper_grasping_frame_Z:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -711,6 +698,16 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          wrist_ft_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          wrist_ft_tool_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           xtion_depth_frame:
             Alpha: 1
             Show Axes: false
@@ -747,7 +744,7 @@ Visualization Manager:
   Global Options:
     Background Color: 80; 100; 100
     Default Light: true
-    Fixed Frame: base_footprint
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -787,19 +784,19 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7547969818115234
+      Pitch: 1.154796838760376
       Target Frame: base_link
-      Yaw: 2.913597822189331
+      Yaw: 1.7285975217819214
     Saved: ~
 Window Geometry:
   DepthImage:
     collapsed: false
   Displays:
     collapsed: false
-  Height: 1304
+  Height: 728
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001a90000047afc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000022b000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000018005200470042002d0044002000630061006d006500720061010000026e000001400000001600fffffffb00000014004400650070007400680049006d00610067006501000003b4000001030000001600ffffff000000010000010f0000035ffc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000410000035f000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004020000003efc0100000002fb0000000800540069006d0065010000000000000402000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000002530000047a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001a90000023afc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000111000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000018005200470042002d0044002000630061006d00650072006101000001540000009e0000001600fffffffb00000014004400650070007400680049006d00610067006501000001f80000007f0000001600ffffff000000010000010f0000035ffc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000410000035f000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004180000003efc0100000002fb0000000800540069006d0065010000000000000418000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000002690000023a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   RGB-D camera:
     collapsed: false
   Selection:
@@ -810,6 +807,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1026
-  X: 54
-  Y: 331
+  Width: 1048
+  X: 783
+  Y: 103

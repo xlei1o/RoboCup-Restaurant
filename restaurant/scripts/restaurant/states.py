@@ -2,13 +2,14 @@ import rospy
 import smach
 import actionlib
 
-
 from control_msgs.msg import PointHeadActionGoal
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from darknet_ros_msgs.msg import BoundingBoxes
 from objects_msgs.msg import objects, single
 from wit_ros.srv import ListenAndInterpret, ListenAndInterpretResponse
+from object_detect.srv import Customer_Interest
 from restaurant import functions
+
 
 class Say(smach.State):
     def __init__(self, text):
@@ -32,7 +33,9 @@ class Navigation(smach.State):
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map" 
         goal.target_pose.pose.position.x = self.coordinate['x']
+        print(self.coordinate['y'])
         goal.target_pose.pose.position.y = self.coordinate['y']
+        goal.target_pose.pose.orientation.z = self.coordinate['z']
         goal.target_pose.pose.orientation.w = self.coordinate['w']
         client.send_goal(goal)
         client.wait_for_result()
@@ -43,40 +46,27 @@ class Navigation(smach.State):
 
 
 class Calling(smach.State):
-    def __init__(self, hd):
+    def __init__(self):
         smach.State.__init__(self, outcomes=['success', 'failure'])
-        self.hd = hd
 
     def execute(self, userdata):
-        rospy.loginfo('Looking for customer raising hand...')
-        rospy.sleep(10)  
-        if self.hd.result():       
+
+        rospy.wait_for_service('/restaurant/customer_interest')
+        service_proxy = rospy.ServiceProxy('/restaurant/customer_interest', Customer_Interest)
+        response = service_proxy()
+        if response.customer_interest:       
             return 'success'
         else:
             return 'failure'
 
 
 class LookAround(smach.State):
-    def __init__(self, table):
+    def __init__(self, pan):
         smach.State.__init__(self, outcomes=['success', 'failure'])
-        self.table = table
-        self.pub_head_topic = rospy.Publisher('/head_controller/point_head_action/goal', PointHeadActionGoal, queue_size=1)
+        self.pan = pan
     def execute(self, userdata):
-        phag = PointHeadActionGoal()
-        phag.header.frame_id = "/map"
-        phag.goal.max_velocity = 1.0
-        phag.goal.min_duration = rospy.Duration(0.2)
-        phag.goal.target.header.frame_id = "/map"
-        phag.goal.pointing_axis.x = 1.0
-        phag.goal.pointing_frame = "/head_2_link"
+        return functions.HeadAction(self.pan, 0.0)
 
-        phag.goal.target.point.x = self.table['x']
-        phag.goal.target.point.y = self.table['y']
-        phag.goal.target.point.z = 0.9
-        # rospy.loginfo("Sending: " + str(phag))
-        self.pub_head_topic.publish(phag)
-
-        return 'success'
         
 class ObjectDetection(smach.State):
     def __init__(self):
@@ -107,6 +97,7 @@ class ObjectDetection(smach.State):
         rospy.Subscriber('/darknet_ros/bounding_boxes', BoundingBoxes, self.callback)
         rospy.wait_for_message('/darknet_ros/bounding_boxes', BoundingBoxes)
         userdata.exist_objects = self.names
+        rospy.loginfo(userdata.exist_objects)
         functions.HeadAction(0.0, 0.0)
         if userdata.grasp_ready:
             # functions.HeadAction(0.0, 0.0)

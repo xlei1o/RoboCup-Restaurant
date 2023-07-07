@@ -1,11 +1,11 @@
 fixed_coordinates: {
-   storage_table: {x: -0.627, y: -3.4, z: 0.5, w: 0.0},
+   storage_table: {x: -2.9161, y: -1.814, z: 0.88447, w: 0.4666},
 
-   stand_by: {x: -1.0272, y: -1.5166, z: 0.5, w: 0.998877},
+   stand_by: {x: -1.7747, y: -0.54035, z: -0.4523, w: 0.8924},
 
-   table_left: {x: -1.43, y: 0.09, z: 0.5, w: 0.42},
+   table_left: {x: 0.095037, y: 0.12586, z: -0.5222, w: 0.85282},
 
-   table_right: {x: 2.09, y: 1.82, z: 0.5, w: 0.42}
+   table_right: {x: -2.6712, y: -2.1944, z: -0.3984, w: 0.9172}
 }
 
 wit_api_key: GG424C7762FEFSTDI2BWR3MZQMO6UPUP
