@@ -11,12 +11,15 @@ from geometry_msgs.msg import Quaternion,Pose
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from moveit_msgs.msg import CollisionObject
-from moveit_msgs.msg import PlaceAction, PlaceGoal, PlaceResult, PlaceLocation
 from shape_msgs.msg import SolidPrimitive
+from sensor_msgs.msg import Image
 
 # asuming we have server to detect the object and return the coordinates
 from object_grasp.srv import grasp, graspResponse
 from object_grasp.srv import place, placeResponse
+
+# get grasp_pose
+from grasp_detection.srv import GraspDetection,GraspDetectionRequest, GraspDetectionResponse
 
 
 # moveit_error_dict = {}
@@ -76,12 +79,7 @@ class Grasp_Place():
     def add_collision_objects(self,id,dimentions,pose):
         co = create_collision_object(id,dimentions,pose)
         self.scene.add_object(co)
-        return None
-
-
-
-    
-        
+        return None     
 
     def preparation(self,object_pose):
         """
