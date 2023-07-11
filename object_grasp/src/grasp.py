@@ -10,8 +10,9 @@ from actionlib import SimpleActionClient, SimpleActionServer
 from geometry_msgs.msg import Quaternion,Pose
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from moveit_msgs.msg import Grasp, PickupAction, PickupGoal, PickupResult, MoveItErrorCodes
+from moveit_msgs.msg import CollisionObject
 from moveit_msgs.msg import PlaceAction, PlaceGoal, PlaceResult, PlaceLocation
+from shape_msgs.msg import SolidPrimitive
 
 # asuming we have server to detect the object and return the coordinates
 from object_grasp.srv import grasp, graspResponse
@@ -25,6 +26,24 @@ from object_grasp.srv import place, placeResponse
 # 		moveit_error_dict[code] = name
 
 
+def create_collision_object(id,dimensions,pose):
+        object = CollisionObject()
+        object.id = id
+        object.header.frame_id = 'map' #TODO: be sure about this
+
+        solid = SolidPrimitive()
+        solid.type = solid.BOX
+        solid.dimensions = dimensions
+        object.primitives = [solid]
+
+        object_pose = Pose()
+        object_pose.position.x = pose[X]
+        object_pose.position.y = pose[Y]
+        object_pose.position.z = pose[Z]
+
+        object.primitive_poses = [object_pose]
+        object.operation = object.ADD
+        return object
 
 
 
@@ -39,6 +58,7 @@ class Grasp_Place():
 
         self.robot = moveit_commander.RobotCommander()
         self.move_group = moveit_commander.MoveGroupCommander("arm_torso")
+        self.scene = moveit_commander.PlanningSceneInterface()
 
     def get_pose(coordinates):
         """
@@ -52,6 +72,15 @@ class Grasp_Place():
         pose.position.z = coordinates[2]
 
         return pose
+    
+    def add_collision_objects(self,id,dimentions,pose):
+        co = create_collision_object(id,dimentions,pose)
+        self.scene.add_object(co)
+        return None
+
+
+
+    
         
 
     def preparation(self,object_pose):
@@ -130,9 +159,15 @@ class Grasp_Place():
         object_pose:Pose
         """
 
-        #move to the grasp pose
+        #add the table_storage
+
+        self.add_collision_objects('table_storage',[2,2,0.3],[0,0,-0.1]) #TODO: change the paremeter
+
+        #move to the pre-grasp pose
 
         self.preparation(object_pose)
+
+        # move to the grasp-pose
 
         rospy.loginfo("Object pose: %s", object_pose)
 
@@ -168,12 +203,19 @@ class Grasp_Place():
 
         self.move_group.clear_pose_targets()
 
+        # remove the table
+        self.scene.remove_world_object("table_storage")
+
         response = EmptyResponse()
 
         return response
 
 
     def place(self,object_pose):
+
+        #add the table_place
+
+        self.add_collision_objects('table_place',[0.3,0.6,0.2],[0,0,-0.1]) #TODO: change the paremeter
 
         self.preparation(object_pose)
 
@@ -206,7 +248,10 @@ class Grasp_Place():
 
         self.move_group.clear_pose_targets()
 
-        rospy.sleep(1) 
+        rospy.sleep(1)
+
+        # remove the table
+        self.scene.remove_world_object("table_place")
 
         response = EmptyResponse()
 
@@ -275,14 +320,6 @@ if __name__ == "__main__":
     
 
     
-    # pre_object_service = rospy.Service(
-    #     "restaurant/pre_object", Pre_object, a.pre_grasp)
-    
-    # grasp_object_service = rospy.Service(
-    #     "restaurant/grasp_object", Empty, a.grasp)
-    
-    # place_object_service = rospy.Service(
-    #     "restaurant/place_object", Empty, a.place)
     
     # ps = Pose()
     # ps.position.x = 0.5

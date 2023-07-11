@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   actionlib
   actionlib_msgs
+  shape_msgs
 )
 
 
@@ -80,6 +81,7 @@ generate_messages(
   geometry_msgs
   std_msgs
   actionlib_msgs
+  shape_msgs
 )
 
 ################################################
@@ -120,6 +122,7 @@ catkin_package(
   std_srvs
   actionlib
   actionlib_msgs
+  shape_msgs
 )
 
 ###########
