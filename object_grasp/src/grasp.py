@@ -5,25 +5,40 @@ from tf.transformations import *
 from tf2_geometry_msgs import *
 import moveit_commander
 import sys
-import functools
+from actionlib import SimpleActionClient, SimpleActionServer
 
 from geometry_msgs.msg import Quaternion,Pose
-from std_srvs.srv import Empty, EmptyResponse
+from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from moveit_msgs.msg import Grasp, PickupAction, PickupGoal, PickupResult, MoveItErrorCodes
+from moveit_msgs.msg import PlaceAction, PlaceGoal, PlaceResult, PlaceLocation
 
 # asuming we have server to detect the object and return the coordinates
-from ..srv import Pre_object,Rel2Abs,ApproachObjectResponse
+from object_grasp.srv import grasp, graspResponse
+from object_grasp.srv import place, placeResponse
 
 
-class Grasp:
+# moveit_error_dict = {}
+# for name in MoveItErrorCodes.__dict__.keys():
+# 	if not name[:1] == '_':
+# 		code = MoveItErrorCodes.__dict__[name]
+# 		moveit_error_dict[code] = name
+
+
+
+
+
+
+
+
+class Grasp_Place():
     """
     input: object pose
     """
     def __init__(self):
-        self.target_abs_pose = None
+
         self.robot = moveit_commander.RobotCommander()
-        self.grasp_pose = None
-        self.move_group = moveit_commander.MoveGroupCommander("arm_torsor")
+        self.move_group = moveit_commander.MoveGroupCommander("arm_torso")
 
     def get_pose(coordinates):
         """
@@ -50,25 +65,25 @@ class Grasp:
         
 
         # the final orientation of hand
-        object_pose.pose.orientation = Quaternion(0.5,0.5,0.5,0.5)
+        object_pose.orientation = Quaternion(0.5,0.5,0.5,0.5)
 
         # the vertival pose of the hand
         # object_pose.pose.position.z += rospy.get_param('z_axis_offset') # at the position z of the object
         # because the vertival pose is the most safe pose
-        object_pose.pose.position.z += rospy.get_param('z_axis_offset')
+        object_pose.position.z += 0.1
 
         # make the grasp pose same as the object pose
-        self.grasp_pose = copy.deepcopy(object_pose.pose) 
+        self.grasp_pose = copy.deepcopy(object_pose) 
 
         # the distance between the hand and the object
-        self.grasp_pose.position.y -= rospy.get_param('y_axis_offset')
+        self.grasp_pose.position.y -= 0.1
 
         # pre-grasp pose
         object_pose.position.y -=0.15 
 
         rospy.loginfo("pre-grasp pose")
 
-        self.move_group.set_pose_target(object_pose.pose) # quaternion
+        self.move_group.set_pose_target(object_pose) # quaternion
 
         # move the manipulator to the pre-grasp pose
         self.move_group.go(wait=True)
@@ -79,19 +94,49 @@ class Grasp:
         # delete the pre-grasp pose
         self.move_group.clear_pose_targets()
 
-        response = ApproachObjectResponse()
-        response.result = True
-        return response
+        return None
+
+    def grasp_cb(self, coordinate):
+        """
+		:type goal: PickUpPoseGoal
+          
+		"""
+        object_pose = self.get_pose(coordinate)
+        error_code = self.grasp(object_pose)
+        if error_code != 1:
+             grasp_result = 0
+        else:
+             grasp_result = 1
+        
+        return graspResponse(grasp_result)
     
-    def grasp(self,msg):
+    def place_cb(self, object_pose):
+        """
+		:type goal: PickUpPoseGoal
+		"""
+        error_code = self.place(object_pose)
+        if error_code != 1:
+             place_result = 0
+        else:
+             place_result = 1
+        
+        return placeResponse(place_result)
+
+    
+    def grasp(self,object_pose):
         """
         pick up the object
+
+        object_pose:Pose
         """
 
-        # move to the grasp pose
-        rospy.loginfo("grasp pose")
+        #move to the grasp pose
 
-        self.move_group.set_pose_target(self.grasp_pose)
+        self.preparation(object_pose)
+
+        rospy.loginfo("Object pose: %s", object_pose)
+
+        self.move_group.set_pose_target(object_pose)
 
         self.move_group.go(wait=True)
 
@@ -128,11 +173,13 @@ class Grasp:
         return response
 
 
-    def place(self,table_position):
+    def place(self,object_pose):
+
+        self.preparation(object_pose)
 
         rospy.loginfo("place the object")
 
-        self.move_group.set_pose_target(table_position)
+        self.move_group.set_pose_target(object_pose)
 
         self.move_group.go(wait=True)
 
@@ -149,9 +196,9 @@ class Grasp:
 
         rospy.loginfo("move away from the table")
 
-        table_position.position.z += 0.2 # ToDO: determine the value
+        object_pose.position.z += 0.2 # ToDO: determine the value
 
-        self.move_group.set_pose_target(table_position)
+        self.move_group.set_pose_target(object_pose)
 
         self.move_group.go(wait=True)
 
@@ -164,6 +211,7 @@ class Grasp:
         response = EmptyResponse()
 
         return response
+       
 
 
 
@@ -219,31 +267,46 @@ if __name__ == "__main__":
 
     moveit_commander.roscpp_initialize(sys.argv)
 
-    a = Grasp()
+    gp=Grasp_Place()
+
+    # grasp_service = rospy.Service("restaurant/grasp_object", grasp , gp.grasp_cb)
+
+    # place_service = rospy.Service("restaurant/place_object", place , gp.place_cb)
+    
 
     
-    pre_object_service = rospy.Service(
-        "restaurant/pre_object", Pre_object, a.pre_grasp)
+    # pre_object_service = rospy.Service(
+    #     "restaurant/pre_object", Pre_object, a.pre_grasp)
     
-    grasp_object_service = rospy.Service(
-        "restaurant/grasp_object", Empty, a.grasp)
+    # grasp_object_service = rospy.Service(
+    #     "restaurant/grasp_object", Empty, a.grasp)
     
-    place_object_service = rospy.Service(
-        "restaurant/place_object", Empty, a.place)
+    # place_object_service = rospy.Service(
+    #     "restaurant/place_object", Empty, a.place)
     
     # ps = Pose()
-    # ps.header.frame_id = 'base_footprint'
-    # ps.pose.position.x = 1.0
-    # ps.pose.position.y = 0.0
-    # ps.pose.position.z = 1.0
-    # ps.pose.orientation.w = 1.0
+    # ps.position.x = 0.5
+    # ps.position.y = 0.5
+    # ps.position.z = 0.5
+    # ps.orientation.w = 0.0
     # while not rospy.is_shutdown():
-    #     sg.create_grasps_from_object_pose(ps)
-    #     rospy.sleep(1.0)
-    
-    rospy.loginfo("Grasp_Object is ready.")
+    #     gp.grasp(ps)
+    #     rospy.sleep(5.0)
 
-    a.open_gripper()
+    pp = Pose()
+    pp.position.x = 0.0
+    pp.position.y = 0.0
+    pp.position.z = 0.0
+    pp.orientation.w = 0.0
+    while not rospy.is_shutdown():
+        gp.place(pp)
+        rospy.sleep(5.0)
+
+
+    
+    # rospy.loginfo("Grasp_Object is ready.")
+
+    #gp.open_gripper()
 
     rospy.spin()
 

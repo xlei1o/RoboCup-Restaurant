@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<launch> 
-  <rosparam command="load" file="$(find object_grasp)/config/pick_motions.yaml" /> 
-  <rosparam command="load" file="$(find object_grasp)/config/grasp_param.yaml" /> 
-  
-  <include file="$(find object_grasp)/launch/tiago_bringup.launch"/>
+<launch>
 
-  <arg name="node_start_delay" default="15.0" />
-  <node pkg="object_grasp" type="findObject.py" name="FindObject" output="screen" required="true"/>
-  <node pkg="object_grasp" type="object_grasp.py" name="PickObject" output="screen" required="true"/>
-  <node pkg="object_grasp" type="getAbs.py" name="GetAbs" output="screen" required="true"/>
-</launch>  
+  <arg name="rviz"  default="true"/>
+  
+  <!-- Load definition of pregrasp motion into play_motion namespace -->
+  <rosparam command="load" file="$(find object_grasp)/config/pick_motions.yaml" /> 
+
+  <!-- Pick & place server -->
+  <node name="pick_and_place_server" pkg="object_grasp" type="pick_and_place_server.py" output="screen">
+  
+      <rosparam command="load" file="$(find object_grasp)/config/pick_and_place_params.yaml" />
+      <param name="object_width"  value="0.055" />
+      <param name="object_height" value="0.1" />
+      <param name="object_depth"  value="0.055" />
+  </node>
+
+  <!-- Node exposing service to start looking for the object and trigger the picking -->
+  <node name="pick_client" pkg="object_grasp" type="pick_client.py" output="screen"/>  
+
+  <group if="$(arg rviz)">
+      <node name="pick_demo_rviz" pkg="rviz" type="rviz" args="-d $(find object_grasp)/config/rviz/object_grasp.rviz" />
+  </group>
+
+</launch>
