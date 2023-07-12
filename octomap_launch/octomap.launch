@@ -1,0 +1,38 @@
+<!-- Motion planning -->
+    
+
+<launch>
+
+  <!-- This file makes it easy to include the settings for sensor managers   -->
+
+  <!-- Params for the octomap monitor -->
+  <!--  <param name="octomap_frame" type="string" value="some frame in which the robot moves" /> -->
+  <!-- <param name="octomap_resolution" type="double" value="0.025" />
+  <param name="max_range" type="double" value="5.0" /> -->
+
+  <!-- Load the robot specific sensor manager; this sets the moveit_sensor_manager ROS parameter -->
+  <!-- <arg name="moveit_sensor_manager" default="tiago" />
+  <include file="$(find tiago_moveit_config)/launch/$(arg moveit_sensor_manager)_moveit_sensor_manager.launch.xml" />
+   -->
+    <arg name="robot"  default="titanium"/>
+    <arg name="arm" default="$(eval {'iron': False}.get(arg('robot'), True))"/>
+    <arg name="end_effector" default="pal-gripper"/>
+    <arg name="ft_sensor"  default ="$(eval {'titanium': 'schunk-ft'}.get(arg('robot'), 'false'))"/>
+    <arg name="laser_model" default="sick-571"/>
+    <arg name="camera_model" default="orbbec-astra"/>
+    <arg name="base_type" default="pmb2"/>
+    <arg name="advanced_grasping" default="false"/> <!-- Requires extra software from PAL Robotics -->
+    <arg name="enable_moveit_camera" value="$(eval arg('advanced_grasping'))" />
+
+    <include file="$(find tiago_moveit_config)/launch/move_group.launch">
+        <arg name="arm" value="$(arg arm)"/>
+        <arg name="end_effector" value="$(arg end_effector)"/>
+        <arg name="ft_sensor" value="$(arg ft_sensor)"/>
+        <arg name="laser_model" value="$(arg laser_model)"/>
+        <arg name="camera_model" value="$(arg camera_model)"/>
+        <arg name="camera" value="true"/>
+        <arg name="base_type" value="$(arg base_type)"/>
+        <arg name="capabilities" value="move_group/CapabilityLoader"/>
+        <arg name="moveit_sensor_manager" value="advanced_grasping" if="$(arg advanced_grasping)"/>
+    </include>
+</launch>
