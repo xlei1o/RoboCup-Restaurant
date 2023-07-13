@@ -1,5 +1,0 @@
----
-sensor_msgs/PointCloud2 full_pcl
-sensor_msgs/PointCloud2[] object_clouds
-float32[] scores
-std_msgs/String[] labels_text

@@ -47,7 +47,8 @@
 #include <darknet_ros_msgs/BoundingBox.h>
 #include <darknet_ros_msgs/CheckForObjectsAction.h>
 
-#include  <objects_msgs/getCoordinate.h>
+#include  <objects_msgs/objects.h>
+#include  <objects_msgs/single.h>
 
 class ObjectClustering
 {
@@ -61,12 +62,13 @@ public:
   ~ObjectClustering();
 
   bool initialize(ros::NodeHandle& nh);
-  bool getCoordinateCallback(objects_msgs::getCoordinate::Request& req, objects_msgs::getCoordinate::Response& res);
+  void update(const ros::Time &time);
 
 private:
   bool preProcessCloud(CloudPtr& input, CloudPtr& output);
   bool segmentCloud(CloudPtr& input, CloudPtr& objects_cloud);
-  Eigen::Vector3d clusterCloud(CloudPtr& input, std::string& desire);
+  std::vector<Eigen::Vector3d> clusterCloud(CloudPtr& input);
+  Eigen::Vector3d clusterMaching(std::vector<Eigen::Vector3d>& input, Eigen::Vector2d& obj);
 
 private:
   void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg);
@@ -83,6 +85,7 @@ private:
   ros::Subscriber point_cloud_sub_;   //!< Subscribers to the PointCloud data
   ros::Subscriber object_detections_sub_;
   ros::Subscriber camera_info_sub_;
+  ros::Publisher objects_coordinate_pub_;  
 
   // internal pointclouds
   CloudPtr raw_cloud_;                  //!< Inital raw point cloud
@@ -90,7 +93,7 @@ private:
   CloudPtr objects_cloud_;              //!< points of objects
   std::vector<darknet_ros_msgs::BoundingBox> detections_;
 
-  Eigen::Vector2d detection_;
+  std::vector<Eigen::Vector2d> objects_;
   Eigen::Matrix3d K_; 
   // transformation
   tf::TransformListener tfListener_;    //!< access ros tf tree to get frame transformations

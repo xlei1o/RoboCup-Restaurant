@@ -14,6 +14,12 @@ int main(int argc, char** argv)
     ROS_ERROR_STREAM("Error init service");
     return -1;
   }
-
-  ros::spin();
+  
+  ros::Rate rate(30);
+  while(ros::ok())
+  {
+    clustering.update(ros::Time::now());
+    ros::spinOnce();
+    rate.sleep();
+  }
 }

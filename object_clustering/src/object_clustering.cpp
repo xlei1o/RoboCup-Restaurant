@@ -20,7 +20,8 @@ bool ObjectClustering::initialize(ros::NodeHandle& nh)
   // ros::topic::waitForMessage<darknet_ros_msgs::BoundingBoxesConstPtr>("/darknet_ros/bounding_boxes");
   camera_info_sub_ = nh.subscribe("/xtion/rgb/camera_info", 1, &ObjectClustering::cameraInfoCallback, this);
   // ros::topic::waitForMessage<sensor_msgs::CameraInfoConstPtr>("/xtion/rgb/camera_info");
-  service_ = nh.advertiseService("/restaurant/get_object_coordinate", &ObjectClustering::getCoordinateCallback, this);
+  // service_ = nh.advertiseService("/restaurant/get_object_coordinate", &ObjectClustering::getCoordinateCallback, this);
+  objects_coordinate_pub_ = nh.advertise<objects_msgs::objects>("/restaurant/objects", 1);
   raw_cloud_.reset(new PointCloud);
   preprocessed_cloud_.reset(new PointCloud);
   objects_cloud_.reset(new PointCloud);
@@ -28,43 +29,39 @@ bool ObjectClustering::initialize(ros::NodeHandle& nh)
   return true;
 }
 
-bool ObjectClustering::getCoordinateCallback(objects_msgs::getCoordinate::Request& req, 
-                                             objects_msgs::getCoordinate::Response& res)
-{ 
-  // object_detections_sub_ = nh.subscribe("/darknet_ros/bounding_boxes", 1, &ObjectClustering::detectionCallback, this);
+
+void ObjectClustering::update(const ros::Time& time)
+{
   if(is_cloud_updated_)
   {
     is_cloud_updated_ = false;
     if(!preProcessCloud(raw_cloud_, preprocessed_cloud_)){
-      return false;
+      return;
       }
     if(!segmentCloud(preprocessed_cloud_, objects_cloud_)){
-      return false;
+      return;
     }
-
-    int number = detections_.size();
-    for (int i = 0; i < number; i++)
-    {
-      if(detections_[i].Class == req.object){
-        double x = (detections_[i].xmax - detections_[i].xmin)/2 + detections_[i].xmin;
-        double y = (detections_[i].ymax - detections_[i].ymin)/2 + detections_[i].ymin;
-        detection_ << x, y;
-      }
+    std::vector<Eigen::Vector3d> centorids = clusterCloud(objects_cloud_);
+    
+    objects_msgs::objects msg;
+    msg.Objects.resize(detections_.size());
+    for (int i = 0; i < detections_.size(); i++)
+    { 
+      double x = (detections_[i].xmax - detections_[i].xmin)/2 + detections_[i].xmin;
+      double y = (detections_[i].ymax - detections_[i].ymin)/2 + detections_[i].ymin;
+      Eigen::Vector2d obj_;
+      obj_ << x, y;
+      // ROS_INFO_STREAM(obj_);
+      Eigen::Vector3d desire = clusterMaching(centorids, obj_);
+      msg.Objects[i].name = detections_[i].Class;
+      msg.Objects[i].x = desire[0];
+      msg.Objects[i].y = desire[1];
+      msg.Objects[i].z = desire[2];
+      ROS_INFO_STREAM(desire);
     }
-
-    if (is_boundingboxes_updated_ && has_camera_info_)
-    {
-      is_boundingboxes_updated_ = false;
-      has_camera_info_ = false;
-      Eigen::Vector3d output = clusterCloud(objects_cloud_, req.object);
-      res.x = output[0];
-      res.y = output[1];
-      res.z = output[2];
-    }
+    objects_coordinate_pub_.publish(msg);
   }
-  return true;
 }
-
 
 bool ObjectClustering::preProcessCloud(CloudPtr& input, CloudPtr& output)
 {
@@ -169,7 +166,7 @@ bool ObjectClustering::segmentCloud(CloudPtr& input, CloudPtr& objects_cloud)
 }
 
 
-Eigen::Vector3d ObjectClustering::clusterCloud(CloudPtr& input, std::string& desire)
+std::vector<Eigen::Vector3d> ObjectClustering::clusterCloud(CloudPtr& input)
 {
   pcl::EuclideanClusterExtraction<PointT> ec;
   std::vector<pcl::PointIndices> cluster_indices;
@@ -199,7 +196,11 @@ Eigen::Vector3d ObjectClustering::clusterCloud(CloudPtr& input, std::string& des
     centroid /= total_points;
     centroids.push_back(centroid);
   }
+  return centroids;
+}
 
+Eigen::Vector3d ObjectClustering::clusterMaching(std::vector<Eigen::Vector3d>& input, Eigen::Vector2d& obj)
+{
   Eigen::Affine3d T_base_camera; 
   tf::StampedTransform transform;
   try 
@@ -212,21 +213,23 @@ Eigen::Vector3d ObjectClustering::clusterCloud(CloudPtr& input, std::string& des
   }
   tf::transformTFToEigen(transform, T_base_camera);
 
-  double dist = 100;
+  double dist = 1000000;
   Eigen::Vector3d desire_coordinate;
   
-  for(int index = 0; index < centroids.size(); index++)
+  for(int index = 0; index < input.size(); index++)
   { 
     Eigen::Vector2d pixel_centroid; 
     Eigen::Vector3d inter;
-    inter = K_ * T_base_camera * centroids[index];
+    inter = K_ * T_base_camera * input[index];
     pixel_centroid << inter[0]/inter[2], inter[1]/inter[2];
-    if((pixel_centroid-detection_).norm() < dist)
+    if((pixel_centroid-obj).norm() < dist)
     {
-      dist = (pixel_centroid-detection_).norm();
-      desire_coordinate = centroids[index];
+      // ROS_INFO_STREAM(pixel_centroid);
+      dist = (pixel_centroid-obj).norm();
+      desire_coordinate = input[index];
     }
   }
+  // ROS_INFO_STREAM(desire_coordinate);
   return desire_coordinate;
 }
 
@@ -240,7 +243,7 @@ void ObjectClustering::detectionCallback(const darknet_ros_msgs::BoundingBoxesCo
 { 
   is_boundingboxes_updated_ = true;
   int number = msg -> bounding_boxes.size();
-  detections_.resize(number);
+  detections_.clear();
   for (int i = 0; i < number; i++)
   {   
     detections_.push_back(msg->bounding_boxes[i]);

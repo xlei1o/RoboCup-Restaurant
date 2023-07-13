@@ -1,4 +1,4 @@
 string name
-uint32 x
-uint32 y
-
+float64 x
+float64 y
+float64 z
