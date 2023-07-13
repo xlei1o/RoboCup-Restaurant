@@ -32,7 +32,7 @@ from grasp_detection.srv import GraspDetection,GraspDetectionRequest, GraspDetec
 def create_collision_object(id,dimensions,pose):
         object = CollisionObject()
         object.id = id
-        object.header.frame_id = 'map' #TODO: be sure about this
+        object.header.frame_id = 'base_footprint' #TODO: be sure about this
 
         solid = SolidPrimitive()
         solid.type = solid.BOX
@@ -40,9 +40,9 @@ def create_collision_object(id,dimensions,pose):
         object.primitives = [solid]
 
         object_pose = Pose()
-        object_pose.position.x = pose[X]
-        object_pose.position.y = pose[Y]
-        object_pose.position.z = pose[Z]
+        object_pose.position.x = pose[0]
+        object_pose.position.y = pose[1]
+        object_pose.position.z = pose[2]
 
         object.primitive_poses = [object_pose]
         object.operation = object.ADD
@@ -63,7 +63,7 @@ class Grasp_Place():
         self.move_group = moveit_commander.MoveGroupCommander("arm_torso")
         self.scene = moveit_commander.PlanningSceneInterface()
 
-    def get_pose(coordinates):
+    def get_pose(self,coordinates):
         """
         get the pose of the object
 
@@ -77,11 +77,12 @@ class Grasp_Place():
         return pose
     
     def add_collision_objects(self,id,dimentions,pose):
+        rospy.loginfo('add_table')
         co = create_collision_object(id,dimentions,pose)
         self.scene.add_object(co)
         return None     
 
-    def preparation(self,object_pose):
+    def preparation(self):
         """
         make tiago put its hands at the right side of the object
 
@@ -92,36 +93,69 @@ class Grasp_Place():
         
 
         # the final orientation of hand
-        object_pose.orientation = Quaternion(0.5,0.5,0.5,0.5)
+        # object_pose.orientation = Quaternion(0.56,-0.44,-0.49,0.49)
 
         # the vertival pose of the hand
         # object_pose.pose.position.z += rospy.get_param('z_axis_offset') # at the position z of the object
         # because the vertival pose is the most safe pose
-        object_pose.position.z += 0.1
+        # object_pose.position.z += 0.1
 
-        # make the grasp pose same as the object pose
-        self.grasp_pose = copy.deepcopy(object_pose) 
+        # # make the grasp pose same as the object pose
+        # self.grasp_pose = copy.deepcopy(object_pose) 
 
-        # the distance between the hand and the object
-        self.grasp_pose.position.y -= 0.1
+        # # the distance between the hand and the object
+        # self.grasp_pose.position.y -= 0.05
 
-        # pre-grasp pose
-        object_pose.position.y -=0.15 
+        # # pre-grasp pose
+        # object_pose.position.y -=0.1
+        # self.grasp_pose = copy.deepcopy(object_pose)
+        # self.grasp_pose.position.x = 0.658
+        # self.grasp_pose.position.y = 0.058
+        # self.grasp_pose.position.z = 0.922
 
-        rospy.loginfo("pre-grasp pose")
+        # rospy.loginfo("pre-grasp pose")
 
-        self.move_group.set_pose_target(object_pose) # quaternion
+        # self.move_group.set_pose_target(object_pose) # quaternion
 
-        # move the manipulator to the pre-grasp pose
-        self.move_group.go(wait=True)
+        # # move the manipulator to the pre-grasp pose
+        # self.move_group.go(wait=True)
 
-        # stop the manipulator at the pre-grasp pose
-        self.move_group.stop()
+        # # stop the manipulator at the pre-grasp pose
+        # self.move_group.stop()
 
-        # delete the pre-grasp pose
-        self.move_group.clear_pose_targets()
+        # # delete the pre-grasp pose
+        # self.move_group.clear_pose_targets()
+
+
+        rospy.loginfo("start pre_pose")
+        arm_group = moveit_commander.MoveGroupCommander('arm_torso')
+        # target_angles = [0.215, 1.57, -1.5, -3.1, 2.29, 1.75, 0.77, -0.19]
+        # target_angles = [0.215, 1.61, -0.61, -3.16, 1.92, 1.66, 1.27, 0]
+        target_angles = [0.234, 1.57, -1.4, -3.14, 2.16, 1.71, 0.79, -0.12]
+        arm_group.set_joint_value_target(target_angles)
+        # plan=arm_group.plan()
+        arm_group.go()
+        arm_group.stop()
+        arm_group.clear_pose_targets()
+        rospy.sleep(2)
 
         return None
+    
+
+    def postgrasp(self):
+
+        rospy.loginfo("start post_pose")
+        arm_group = moveit_commander.MoveGroupCommander('arm_torso')
+        target_angles = [0.215, 1.36, 0, -2.81, 1.54, 1.87, 1.34, 0.35]
+        arm_group.set_joint_value_target(target_angles)
+        arm_group.set_max_acceleration_scaling_factor(0.8)
+        arm_group.go()
+        arm_group.stop()
+        arm_group.clear_pose_targets()
+        rospy.sleep(2)
+
+        return None
+
 
     def grasp_cb(self, coordinate):
         """
@@ -159,11 +193,13 @@ class Grasp_Place():
 
         #add the table_storage
 
-        self.add_collision_objects('table_storage',[2,2,0.3],[0,0,-0.1]) #TODO: change the paremeter
+        self.add_collision_objects('table_place',[0.8,1.0,0.72],[1.1,0,0.36]) #TODO: change the paremeter
 
         #move to the pre-grasp pose
 
-        self.preparation(object_pose)
+        self.preparation()
+
+        rospy.sleep(3)
 
         # move to the grasp-pose
 
@@ -185,24 +221,26 @@ class Grasp_Place():
 
         rospy.sleep(1)
 
-        # define post-grasp pose
-        post_grasp_pose = copy.deepcopy(self.grasp_pose)
+        # # define post-grasp pose
+        # post_grasp_pose = copy.deepcopy(self.grasp_pose)
 
-        post_grasp_pose.position.z += rospy.get_param('grasp_height') # ToDO: determine the value
+        # post_grasp_pose.position.z += 0.3 # ToDO: determine the value
 
-        # move to the post-grasp pose
-        rospy.loginfo("post-grasp pose")
+        # # move to the post-grasp pose
+        # rospy.loginfo("post-grasp pose")
 
-        self.move_group.set_pose_target(post_grasp_pose)
+        # self.move_group.set_pose_target(post_grasp_pose)
 
-        self.move_group.go(wait=True)
+        # self.move_group.go(wait=True)
 
-        self.move_group.stop()
+        # self.move_group.stop()
 
-        self.move_group.clear_pose_targets()
+        # self.move_group.clear_pose_targets()
+
+        self.postgrasp()
 
         # remove the table
-        self.scene.remove_world_object("table_storage")
+        self.scene.remove_world_object("table_place")
 
         response = EmptyResponse()
 
@@ -258,7 +296,7 @@ class Grasp_Place():
 
 
 
-    def close_gripper():
+    def close_gripper(self):
         """
         close the gripper
         """
@@ -283,7 +321,7 @@ class Grasp_Place():
 
             rospy.sleep(0.5)
 
-    def open_gripper():
+    def open_gripper(self):
 
         gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
 
@@ -329,19 +367,25 @@ if __name__ == "__main__":
     #     rospy.sleep(5.0)
 
     pp = Pose()
-    pp.position.x = 0.0
-    pp.position.y = 0.0
-    pp.position.z = 0.0
+    # pp.position.x = 0.7
+    # pp.position.y = 0.5
+    # pp.position.z = 0.8
+
+    pp.position.x = 0.658
+    pp.position.y = 0.058
+    pp.position.z = 0.922
     pp.orientation.w = 0.0
-    while not rospy.is_shutdown():
-        gp.place(pp)
-        rospy.sleep(5.0)
+    gp.add_collision_objects('table_place',[0.8,1.0,0.72],[1.1,0,0.36])
+    # gp.grasp(pp)
+    gp.preparation()
+    # gp.postgrasp()
+    rospy.sleep(5)
 
 
     
     # rospy.loginfo("Grasp_Object is ready.")
 
-    #gp.open_gripper()
+    # gp.open_gripper()
 
     rospy.spin()
 
