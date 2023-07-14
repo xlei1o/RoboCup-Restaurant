@@ -47,53 +47,58 @@
 #include <darknet_ros_msgs/BoundingBox.h>
 #include <darknet_ros_msgs/CheckForObjectsAction.h>
 
-#include  <objects_msgs/objects.h>
-#include  <objects_msgs/single.h>
+#include <objects_msgs/objects.h>
+#include <objects_msgs/single.h>
 
 class ObjectClustering
 {
 public:
-  typedef pcl::PointXYZ PointT;                // The Point Type
-  typedef pcl::PointCloud<PointT> PointCloud;     // The PointCloud Type
-  typedef PointCloud::Ptr CloudPtr;               // The PointCloud Pointer Type
+    typedef pcl::PointXYZ PointT;               // The Point Type
+    typedef pcl::PointCloud<PointT> PointCloud; // The PointCloud Type
+    typedef PointCloud::Ptr CloudPtr;           // The PointCloud Pointer Type
 
 public:
-  ObjectClustering();
-  ~ObjectClustering();
+    ObjectClustering();
+    ~ObjectClustering();
 
-  bool initialize(ros::NodeHandle& nh);
-  void update(const ros::Time &time);
-
-private:
-  bool preProcessCloud(CloudPtr& input, CloudPtr& output);
-  bool segmentCloud(CloudPtr& input, CloudPtr& objects_cloud);
-  std::vector<Eigen::Vector3d> clusterCloud(CloudPtr& input);
-  Eigen::Vector3d clusterMaching(std::vector<Eigen::Vector3d> input, Eigen::Vector2d obj);
+    bool initialize(ros::NodeHandle &nh);
+    void update(const ros::Time &time);
 
 private:
-  void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg);
-  void detectionCallback(const darknet_ros_msgs::BoundingBoxesConstPtr &msg);
-  void cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr &msg);
+    bool preProcessCloud(CloudPtr &input, CloudPtr &output);
+    bool segmentCloud(CloudPtr &input, CloudPtr &objects_cloud);
+    std::vector<Eigen::Vector3d> clusterCloud(CloudPtr &input);
+    Eigen::Vector3d clusterMaching(std::vector<Eigen::Vector3d> input, Eigen::Vector2d obj);
+
 private:
-  ros::ServiceServer service_;
+    void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg);
+    void detectionCallback(const darknet_ros_msgs::BoundingBoxesConstPtr &msg);
+    void cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr &msg);
 
-  // std::string desire_object;
-  
-  ros::Subscriber point_cloud_sub_;   //!< Subscribers to the PointCloud data
-  ros::Subscriber object_detections_sub_;
-  ros::Subscriber camera_info_sub_;
-  ros::Publisher objects_coordinate_pub_;  
+private:
+    ros::ServiceServer service_;
 
-  // internal pointclouds
-  CloudPtr raw_cloud_;                  //!< Inital raw point cloud
-  CloudPtr preprocessed_cloud_;         //!< after preprocessing
-  CloudPtr objects_cloud_;              //!< points of objects
-  std::vector<darknet_ros_msgs::BoundingBox> detections_;
+    // std::string desire_object;
 
-  std::vector<Eigen::Vector2d> objects_;
-  Eigen::Matrix3d K_; 
-  // transformation
-  tf::TransformListener tfListener_;    //!< access ros tf tree to get frame transformations
+    ros::Subscriber point_cloud_sub_; //!< Subscribers to the PointCloud data
+    ros::Subscriber object_detections_sub_;
+    ros::Subscriber camera_info_sub_;
+    ros::Publisher objects_coordinate_pub_;
+    ros::Publisher objects_cloud_pub_; //!< Publish objects point cloud
+    ros::Publisher plane_cloud_pub_;   //!< Publish table point cloud
+    ros::Publisher pre_cloud_pub_;     //!< Publish table point cloud
+
+    // internal pointclouds
+    CloudPtr raw_cloud_;          //!< Inital raw point cloud
+    CloudPtr preprocessed_cloud_; //!< after preprocessing
+    CloudPtr objects_cloud_;      //!< points of objects
+    CloudPtr plane_cloud_;        //!< points of table surface
+    std::vector<darknet_ros_msgs::BoundingBox> detections_;
+
+    std::vector<Eigen::Vector2d> objects_;
+    Eigen::Matrix3d K_;
+    // transformation
+    tf::TransformListener tfListener_; //!< access ros tf tree to get frame transformations
 };
 
 #endif
