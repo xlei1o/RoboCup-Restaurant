@@ -61,6 +61,7 @@ class Grasp_Place():
 
         self.robot = moveit_commander.RobotCommander()
         self.move_group = moveit_commander.MoveGroupCommander("arm_torso")
+        self.move_group.set_planning_time(15)
         self.scene = moveit_commander.PlanningSceneInterface()
 
     def get_pose(self,coordinates):
@@ -146,7 +147,7 @@ class Grasp_Place():
 
         rospy.loginfo("start post_pose")
         arm_group = moveit_commander.MoveGroupCommander('arm_torso')
-        target_angles = [0.215, 1.36, 0, -2.81, 1.54, 1.87, 1.34, 0.35]
+        target_angles = [0.234, 1.36, 0, -2.81, 1.54, 1.87, 1.34, 0.35]
         arm_group.set_joint_value_target(target_angles)
         arm_group.set_max_acceleration_scaling_factor(0.8)
         arm_group.go()
@@ -193,7 +194,7 @@ class Grasp_Place():
 
         #add the table_storage
 
-        self.add_collision_objects('table_place',[0.8,1.0,0.72],[1.1,0,0.36]) #TODO: change the paremeter
+        self.add_collision_objects('table_grasp',[0.8,1.0,0.72],[1.1,0,0.36]) #TODO: change the paremeter
 
         #move to the pre-grasp pose
 
@@ -205,8 +206,18 @@ class Grasp_Place():
 
         rospy.loginfo("Object pose: %s", object_pose)
 
-        self.move_group.set_pose_target(object_pose)
+        # the sensor of gripper is 5 cm behind
+        object_pose.position.x -=0.05
 
+        setted_workspace = [0.2,-0.28,0.8,0.91,2,1.3]
+
+        self.move_group.set_workspace(setted_workspace)
+
+        #allow replanning
+        self.move_group.allow_replanning(value = True)
+
+        self.move_group.set_pose_target(object_pose)
+    
         self.move_group.go(wait=True)
 
         self.move_group.stop()
@@ -240,7 +251,7 @@ class Grasp_Place():
         self.postgrasp()
 
         # remove the table
-        self.scene.remove_world_object("table_place")
+        self.scene.remove_world_object("table_grasp")
 
         response = EmptyResponse()
 
@@ -254,6 +265,10 @@ class Grasp_Place():
         self.add_collision_objects('table_place',[0.3,0.6,0.2],[0,0,-0.1]) #TODO: change the paremeter
 
         self.preparation(object_pose)
+
+        setted_workspace = [0.2,-0.28,0.45,0.91,2,1.2]
+
+        self.move_group.set_workspace(setted_workspace)
 
         rospy.loginfo("place the object")
 
@@ -274,7 +289,7 @@ class Grasp_Place():
 
         rospy.loginfo("move away from the table")
 
-        object_pose.position.z += 0.2 # ToDO: determine the value
+        object_pose.position.z += 0.4 # ToDO: determine the value
 
         self.move_group.set_pose_target(object_pose)
 
@@ -301,6 +316,7 @@ class Grasp_Place():
         close the gripper
         """
         # close the gripper
+        rospy.loginfo('close gripper')
         gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
 
         # set a loop to close the gripper
@@ -322,7 +338,8 @@ class Grasp_Place():
             rospy.sleep(0.5)
 
     def open_gripper(self):
-
+        
+        rospy.loginfo('open gripper')
         gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
 
         for i in range(10):
@@ -371,17 +388,14 @@ if __name__ == "__main__":
     # pp.position.y = 0.5
     # pp.position.z = 0.8
 
-    pp.position.x = 0.658
-    pp.position.y = 0.058
-    pp.position.z = 0.922
+    pp.position.x = 0.738
+    pp.position.y = -0.25
+    pp.position.z = 0.82
     pp.orientation.w = 0.0
-    gp.add_collision_objects('table_place',[0.8,1.0,0.72],[1.1,0,0.36])
-    # gp.grasp(pp)
-    gp.preparation()
+    # gp.add_collision_objects('table_place',[0.8,1.0,0.72],[1.1,0,0.36])
+    gp.grasp(pp)
+    # gp.preparation()
     # gp.postgrasp()
-    rospy.sleep(5)
-
-
     
     # rospy.loginfo("Grasp_Object is ready.")
 
