@@ -53,7 +53,7 @@
 class ObjectClustering
 {
 public:
-  typedef pcl::PointXYZRGB PointT;                // The Point Type
+  typedef pcl::PointXYZ PointT;                // The Point Type
   typedef pcl::PointCloud<PointT> PointCloud;     // The PointCloud Type
   typedef PointCloud::Ptr CloudPtr;               // The PointCloud Pointer Type
 
@@ -68,16 +68,13 @@ private:
   bool preProcessCloud(CloudPtr& input, CloudPtr& output);
   bool segmentCloud(CloudPtr& input, CloudPtr& objects_cloud);
   std::vector<Eigen::Vector3d> clusterCloud(CloudPtr& input);
-  Eigen::Vector3d clusterMaching(std::vector<Eigen::Vector3d>& input, Eigen::Vector2d& obj);
+  Eigen::Vector3d clusterMaching(std::vector<Eigen::Vector3d> input, Eigen::Vector2d obj);
 
 private:
   void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg);
   void detectionCallback(const darknet_ros_msgs::BoundingBoxesConstPtr &msg);
   void cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr &msg);
 private:
-  bool is_cloud_updated_;             
-  bool is_boundingboxes_updated_;
-  bool has_camera_info_;
   ros::ServiceServer service_;
 
   // std::string desire_object;

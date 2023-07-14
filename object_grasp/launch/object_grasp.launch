@@ -7,13 +7,16 @@
   <rosparam command="load" file="$(find object_grasp)/config/pick_motions.yaml" /> 
 
   <!-- Pick & place server -->
-  <node name="p" pkg="object_grasp" type="pick_and_place_server.py" output="screen">
+  <node name="pick_and_place_server" pkg="object_grasp" type="pick_and_place_server.py" output="screen">
   
       <rosparam command="load" file="$(find object_grasp)/config/pick_and_place_params.yaml" />
       <param name="object_width"  value="0.055" />
       <param name="object_height" value="0.1" />
       <param name="object_depth"  value="0.055" />
   </node>
+
+  <!-- Node exposing service to start looking for the object and trigger the picking -->
+  <node name="pick_client" pkg="object_grasp" type="pick_client.py" output="screen"/>  
 
   <group if="$(arg rviz)">
       <node name="pick_demo_rviz" pkg="rviz" type="rviz" args="-d $(find object_grasp)/config/rviz/object_grasp.rviz" />

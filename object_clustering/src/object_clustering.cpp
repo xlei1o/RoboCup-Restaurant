@@ -11,16 +11,9 @@ ObjectClustering::~ObjectClustering()
 
 bool ObjectClustering::initialize(ros::NodeHandle& nh)
 { 
-  is_cloud_updated_ = false;             
-  is_boundingboxes_updated_ = false;
-  has_camera_info_ = false;
   point_cloud_sub_ = nh.subscribe("/xtion/depth_registered/points", 1, &ObjectClustering::cloudCallback, this);
-  // ros::topic::waitForMessage<sensor_msgs::PointCloud2ConstPtr>("/xtion/depth_registered/points");
   object_detections_sub_ = nh.subscribe("/darknet_ros/bounding_boxes", 1, &ObjectClustering::detectionCallback, this);
-  // ros::topic::waitForMessage<darknet_ros_msgs::BoundingBoxesConstPtr>("/darknet_ros/bounding_boxes");
   camera_info_sub_ = nh.subscribe("/xtion/rgb/camera_info", 1, &ObjectClustering::cameraInfoCallback, this);
-  // ros::topic::waitForMessage<sensor_msgs::CameraInfoConstPtr>("/xtion/rgb/camera_info");
-  // service_ = nh.advertiseService("/restaurant/get_object_coordinate", &ObjectClustering::getCoordinateCallback, this);
   objects_coordinate_pub_ = nh.advertise<objects_msgs::objects>("/restaurant/objects", 1);
   raw_cloud_.reset(new PointCloud);
   preprocessed_cloud_.reset(new PointCloud);
@@ -32,35 +25,34 @@ bool ObjectClustering::initialize(ros::NodeHandle& nh)
 
 void ObjectClustering::update(const ros::Time& time)
 {
-  if(is_cloud_updated_)
-  {
-    is_cloud_updated_ = false;
-    if(!preProcessCloud(raw_cloud_, preprocessed_cloud_)){
-      return;
-      }
-    if(!segmentCloud(preprocessed_cloud_, objects_cloud_)){
-      return;
+  ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/xtion/depth_registered/points");
+  ros::topic::waitForMessage<darknet_ros_msgs::BoundingBoxes>("/darknet_ros/bounding_boxes");
+  ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/xtion/rgb/camera_info");
+  if(!preProcessCloud(raw_cloud_, preprocessed_cloud_)){
+    return;
     }
-    std::vector<Eigen::Vector3d> centorids = clusterCloud(objects_cloud_);
-    
-    objects_msgs::objects msg;
-    msg.Objects.resize(detections_.size());
-    for (int i = 0; i < detections_.size(); i++)
-    { 
-      double x = (detections_[i].xmax - detections_[i].xmin)/2 + detections_[i].xmin;
-      double y = (detections_[i].ymax - detections_[i].ymin)/2 + detections_[i].ymin;
-      Eigen::Vector2d obj_;
-      obj_ << x, y;
-      // ROS_INFO_STREAM(obj_);
-      Eigen::Vector3d desire = clusterMaching(centorids, obj_);
-      msg.Objects[i].name = detections_[i].Class;
-      msg.Objects[i].x = desire[0];
-      msg.Objects[i].y = desire[1];
-      msg.Objects[i].z = desire[2];
-      ROS_INFO_STREAM(desire);
-    }
-    objects_coordinate_pub_.publish(msg);
+  if(!segmentCloud(preprocessed_cloud_, objects_cloud_)){
+    return;
   }
+  std::vector<Eigen::Vector3d> centorids = clusterCloud(objects_cloud_);
+  
+  objects_msgs::objects msg;
+  msg.Objects.resize(detections_.size());
+  for (int i = 0; i < detections_.size(); i++)
+  { 
+    double x = (detections_[i].xmax - detections_[i].xmin)/2 + detections_[i].xmin;
+    double y = (detections_[i].ymax - detections_[i].ymin)/2 + detections_[i].ymin;
+    Eigen::Vector2d obj_;
+    obj_ << x, y;
+    // ROS_INFO_STREAM(obj_);
+    Eigen::Vector3d desire = clusterMaching(centorids, obj_);
+    msg.Objects[i].name = detections_[i].Class;
+    msg.Objects[i].x = desire[0];
+    msg.Objects[i].y = desire[1];
+    msg.Objects[i].z = desire[2];
+    // ROS_INFO_STREAM(desire);
+  }
+  objects_coordinate_pub_.publish(msg);
 }
 
 bool ObjectClustering::preProcessCloud(CloudPtr& input, CloudPtr& output)
@@ -91,13 +83,13 @@ bool ObjectClustering::preProcessCloud(CloudPtr& input, CloudPtr& output)
   pcl::PassThrough<PointT> pass_z;
   pass_z.setInputCloud(transf_cloud);
   pass_z.setFilterFieldName ("z");
-  pass_z.setFilterLimits (0.2, 1.0);
+  pass_z.setFilterLimits (0.4, 1.5);
   pass_z.filter(*output);
   
   pcl::PassThrough<PointT> pass_x;
   pass_x.setInputCloud(output);
   pass_x.setFilterFieldName ("x");
-  pass_x.setFilterLimits (0.0, 1.0);
+  pass_x.setFilterLimits (0.0, 0.98);
   pass_x.filter(*output);
 
   return true;
@@ -158,7 +150,7 @@ bool ObjectClustering::segmentCloud(CloudPtr& input, CloudPtr& objects_cloud)
   pcl::PassThrough<PointT> pass;
   pass.setInputCloud(transf_cloud);
   pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0.01, 0.15);
+  pass.setFilterLimits (0.01, 0.3);
   pass.filter(*filterd_cloud);
 
   pcl::transformPointCloud(*filterd_cloud, *objects_cloud, T_plane_base.inverse());
@@ -199,7 +191,7 @@ std::vector<Eigen::Vector3d> ObjectClustering::clusterCloud(CloudPtr& input)
   return centroids;
 }
 
-Eigen::Vector3d ObjectClustering::clusterMaching(std::vector<Eigen::Vector3d>& input, Eigen::Vector2d& obj)
+Eigen::Vector3d ObjectClustering::clusterMaching(std::vector<Eigen::Vector3d> input, Eigen::Vector2d obj)
 {
   Eigen::Affine3d T_base_camera; 
   tf::StampedTransform transform;
@@ -222,26 +214,29 @@ Eigen::Vector3d ObjectClustering::clusterMaching(std::vector<Eigen::Vector3d>& i
     Eigen::Vector3d inter;
     inter = K_ * T_base_camera * input[index];
     pixel_centroid << inter[0]/inter[2], inter[1]/inter[2];
+
+    // ROS_INFO_STREAM(pixel_centroid);
+
     if((pixel_centroid-obj).norm() < dist)
     {
-      // ROS_INFO_STREAM(pixel_centroid);
       dist = (pixel_centroid-obj).norm();
       desire_coordinate = input[index];
+      ROS_INFO_STREAM(input[index]);
     }
   }
   // ROS_INFO_STREAM(desire_coordinate);
   return desire_coordinate;
 }
 
+
 void ObjectClustering::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
 {
-  is_cloud_updated_ = true;
   pcl::fromROSMsg(*msg, *raw_cloud_);
 }
 
+
 void ObjectClustering::detectionCallback(const darknet_ros_msgs::BoundingBoxesConstPtr &msg)
 { 
-  is_boundingboxes_updated_ = true;
   int number = msg -> bounding_boxes.size();
   detections_.clear();
   for (int i = 0; i < number; i++)
@@ -250,9 +245,9 @@ void ObjectClustering::detectionCallback(const darknet_ros_msgs::BoundingBoxesCo
   }
 }
 
+
 void ObjectClustering::cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr &msg)
 {
-  has_camera_info_ = true;
   Eigen::Matrix3d K = Eigen::Matrix3d::Zero();
 
   K << msg->K[0], 0.0, msg->K[2],

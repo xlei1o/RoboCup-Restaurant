@@ -13,7 +13,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from moveit_msgs.msg import CollisionObject
 from shape_msgs.msg import SolidPrimitive
 from sensor_msgs.msg import Image
-
+from tf.transformations import quaternion_from_euler
 # asuming we have server to detect the object and return the coordinates
 from object_grasp.srv import grasp, graspResponse
 from object_grasp.srv import place, placeResponse
@@ -194,11 +194,19 @@ class Grasp_Place():
 
         #add the table_storage
 
-        self.add_collision_objects('table_grasp',[0.8,1.0,0.72],[1.1,0,0.36]) #TODO: change the paremeter
+        # self.add_collision_objects('table_grasp',[0.8,1.0,0.72],[1.2,0,0.36]) #TODO: change the paremeter
 
+        # object_pose.orientation = Quaternion(-0.47,-0.53,-0.47,0.51)
+        # object_pose.orientation = Quaternion(0.3095,0.6370,0.6345,0.3090)
+        orientation = quaternion_from_euler(3.14/2, 0.0, 0.0)
+        object_pose.orientation.x = orientation[0]
+        object_pose.orientation.y = orientation[1]
+        object_pose.orientation.z = orientation[2]
+        object_pose.orientation.w = orientation[3]
         #move to the pre-grasp pose
 
-        self.preparation()
+        # self.preparation()
+        self.postgrasp()
 
         rospy.sleep(3)
 
@@ -207,11 +215,11 @@ class Grasp_Place():
         rospy.loginfo("Object pose: %s", object_pose)
 
         # the sensor of gripper is 5 cm behind
-        object_pose.position.x -=0.05
+        object_pose.position.z +=0.05
 
-        setted_workspace = [0.2,-0.28,0.8,0.91,2,1.3]
+        # setted_workspace = [0.2,-0.28,0.75,0.91,2,1.3]
 
-        self.move_group.set_workspace(setted_workspace)
+        # self.move_group.set_workspace(setted_workspace)
 
         #allow replanning
         self.move_group.allow_replanning(value = True)
@@ -223,6 +231,8 @@ class Grasp_Place():
         self.move_group.stop()
 
         self.move_group.clear_pose_targets()
+
+        rospy.sleep(3)
 
 
         # close the gripper
@@ -388,9 +398,9 @@ if __name__ == "__main__":
     # pp.position.y = 0.5
     # pp.position.z = 0.8
 
-    pp.position.x = 0.738
-    pp.position.y = -0.25
-    pp.position.z = 0.82
+    pp.position.x = 0.76
+    pp.position.y = -0.315
+    pp.position.z = 0.81
     pp.orientation.w = 0.0
     # gp.add_collision_objects('table_place',[0.8,1.0,0.72],[1.1,0,0.36])
     gp.grasp(pp)

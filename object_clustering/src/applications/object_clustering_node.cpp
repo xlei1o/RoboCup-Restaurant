@@ -5,6 +5,8 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "object_clustering_node");
   ros::NodeHandle nh;
+  // ros::AsyncSpinner spinner(1);
+  // spinner.start();
 
   ObjectClustering clustering;
   
@@ -15,11 +17,11 @@ int main(int argc, char** argv)
     return -1;
   }
   
-  ros::Rate rate(30);
   while(ros::ok())
   {
     clustering.update(ros::Time::now());
     ros::spinOnce();
-    rate.sleep();
   }
+
+  // ros::waitForShutdown();
 }
