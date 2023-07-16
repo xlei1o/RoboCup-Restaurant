@@ -38,31 +38,6 @@ void ObjectClustering::update(const ros::Time &time)
     {
         return;
     }
-<<<<<<< HEAD
-  if(!segmentCloud(preprocessed_cloud_, objects_cloud_)){
-    return;
-  }
-  std::vector<Eigen::Vector3d> centorids = clusterCloud(objects_cloud_);
-  
-  objects_msgs::objects msg;
-  msg.Objects.resize(detections_.size());
-  ROS_INFO_STREAM(detections_.size());
-  for (int i = 0; i < detections_.size(); i++)
-  { 
-    double x = (detections_[i].xmax - detections_[i].xmin)/2 + detections_[i].xmin;
-    double y = (detections_[i].ymax - detections_[i].ymin)/2 + detections_[i].ymin;
-    Eigen::Vector2d obj_;
-    obj_ << x, y;
-    // ROS_INFO_STREAM(obj_);
-    Eigen::Vector3d desire = clusterMaching(centorids, obj_);
-    msg.Objects[i].name = detections_[i].Class;
-    msg.Objects[i].x = desire[0];
-    msg.Objects[i].y = desire[1];
-    msg.Objects[i].z = desire[2];
-    // ROS_INFO_STREAM(desire);
-  }
-  objects_coordinate_pub_.publish(msg);
-=======
 
     std::vector<Eigen::Vector3d> centorids = clusterCloud(objects_cloud_);
 
@@ -90,7 +65,6 @@ void ObjectClustering::update(const ros::Time &time)
         // ROS_INFO_STREAM(desire);
     }
     objects_coordinate_pub_.publish(msg);
->>>>>>> b4d63f7c765fbd37eeb9752195946138138ecfec
 }
 
 bool ObjectClustering::preProcessCloud(CloudPtr &input, CloudPtr &output)
@@ -224,27 +198,6 @@ bool ObjectClustering::segmentCloud(CloudPtr &input, CloudPtr &objects_cloud)
 
 std::vector<Eigen::Vector3d> ObjectClustering::clusterCloud(CloudPtr &input)
 {
-<<<<<<< HEAD
-  pcl::EuclideanClusterExtraction<PointT> ec;
-  std::vector<pcl::PointIndices> cluster_indices;
-  pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
-  ec.setClusterTolerance (0.01);
-  ec.setMinClusterSize (50);
-  ec.setMaxClusterSize (25000);
-  ec.setSearchMethod (tree);
-  ec.setInputCloud(input);
-  ec.extract(cluster_indices);
-
-  std::vector<Eigen::Vector3d> centroids;
-  Eigen::Vector3d centroid;
-
-  int total_points = 0;
-  for (const auto& cluster : cluster_indices)
-  {
-    centroid << 0.0, 0.0, 0.0;
-    total_points = 0;
-    for (const auto& idx : cluster.indices) 
-=======
     pcl::EuclideanClusterExtraction<PointT> ec;
     std::vector<pcl::PointIndices> cluster_indices;
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
@@ -262,7 +215,6 @@ std::vector<Eigen::Vector3d> ObjectClustering::clusterCloud(CloudPtr &input)
 
     int total_points = 0;
     for (const auto &cluster : cluster_indices)
->>>>>>> b4d63f7c765fbd37eeb9752195946138138ecfec
     {
         centroid << 0.0, 0.0, 0.0;
         total_points = 0;

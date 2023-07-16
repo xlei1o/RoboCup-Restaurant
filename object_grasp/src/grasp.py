@@ -7,7 +7,7 @@ import moveit_commander
 import sys
 import actionlib
 
-from geometry_msgs.msg import Quaternion,Pose
+from geometry_msgs.msg import Quaternion, Pose
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from moveit_msgs.msg import CollisionObject
@@ -20,7 +20,7 @@ from play_motion_msgs.msg import PlayMotionAction, PlayMotionGoal
 from sensor_msgs.msg import JointState
 
 # get grasp_pose
-from grasp_detection.srv import GraspDetection,GraspDetectionRequest, GraspDetectionResponse
+from grasp_detection.srv import GraspDetection, GraspDetectionRequest, GraspDetectionResponse
 
 
 # moveit_error_dict = {}
@@ -30,34 +30,31 @@ from grasp_detection.srv import GraspDetection,GraspDetectionRequest, GraspDetec
 # 		moveit_error_dict[code] = name
 
 
-def create_collision_object(id,dimensions,pose):
-        object = CollisionObject()
-        object.id = id
-        object.header.frame_id = 'base_footprint' #TODO: be sure about this
+def create_collision_object(id, dimensions, pose):
+    object = CollisionObject()
+    object.id = id
+    object.header.frame_id = 'base_footprint'  # TODO: be sure about this
 
-        solid = SolidPrimitive()
-        solid.type = solid.BOX
-        solid.dimensions = dimensions
-        object.primitives = [solid]
+    solid = SolidPrimitive()
+    solid.type = solid.BOX
+    solid.dimensions = dimensions
+    object.primitives = [solid]
 
-        object_pose = Pose()
-        object_pose.position.x = pose[0]
-        object_pose.position.y = pose[1]
-        object_pose.position.z = pose[2]
+    object_pose = Pose()
+    object_pose.position.x = pose[0]
+    object_pose.position.y = pose[1]
+    object_pose.position.z = pose[2]
 
-        object.primitive_poses = [object_pose]
-        object.operation = object.ADD
-        return object
-
-
-
-
+    object.primitive_poses = [object_pose]
+    object.operation = object.ADD
+    return object
 
 
 class Grasp_Place():
     """
     input: object pose
     """
+
     def __init__(self):
 
         self.robot = moveit_commander.RobotCommander()
@@ -65,7 +62,7 @@ class Grasp_Place():
         self.move_group.set_planning_time(15)
         self.scene = moveit_commander.PlanningSceneInterface()
 
-    def get_pose(self,x,y,z):
+    def get_pose(self, x, y, z):
         """
         get the pose of the object
 
@@ -77,12 +74,12 @@ class Grasp_Place():
         pose.position.z = z
 
         return pose
-    
-    def add_collision_objects(self,id,dimentions,pose):
+
+    def add_collision_objects(self, id, dimentions, pose):
         rospy.loginfo('add_table')
-        co = create_collision_object(id,dimentions,pose)
+        co = create_collision_object(id, dimentions, pose)
         self.scene.add_object(co)
-        return None     
+        return None
 
     def preparation(self):
         """
@@ -92,7 +89,6 @@ class Grasp_Place():
 
         input: object_pose: the pose of the object >>>> geometry_msgs/Pose
         """
-        
 
         # the final orientation of hand
         # object_pose.orientation = Quaternion(0.56,-0.44,-0.49,0.49)
@@ -103,7 +99,7 @@ class Grasp_Place():
         # object_pose.position.z += 0.1
 
         # # make the grasp pose same as the object pose
-        # self.grasp_pose = copy.deepcopy(object_pose) 
+        # self.grasp_pose = copy.deepcopy(object_pose)
 
         # # the distance between the hand and the object
         # self.grasp_pose.position.y -= 0.05
@@ -128,7 +124,6 @@ class Grasp_Place():
         # # delete the pre-grasp pose
         # self.move_group.clear_pose_targets()
 
-
         rospy.loginfo("start pre_pose")
         arm_group = moveit_commander.MoveGroupCommander('arm_torso')
         # target_angles = [0.215, 1.57, -1.5, -3.1, 2.29, 1.75, 0.77, -0.19]
@@ -142,7 +137,6 @@ class Grasp_Place():
         rospy.sleep(1)
 
         return None
-    
 
     def postgrasp(self):
 
@@ -157,7 +151,7 @@ class Grasp_Place():
         rospy.sleep(1)
 
         return None
-    
+
     def placepose(self):
 
         rospy.loginfo("start anti_tuck_pose")
@@ -172,34 +166,32 @@ class Grasp_Place():
 
         return None
 
-
-
     def grasp_cb(self, request):
         """
-		:type goal: PickUpPoseGoal
-          
-		"""
+                :type goal: PickUpPoseGoal
+
+                """
         object_pose = self.get_pose(request.x, request.y, request.z)
         # error_code = self.grasp(object_pose)
         if self.grasp(object_pose):
-             grasp_result = True
+            grasp_result = True
         else:
-             grasp_result = False
-        
+            grasp_result = False
+
         return graspResponse(grasp_result)
-    
+
     def place_cb(self, request):
         """
-		:type goal: PickUpPoseGoal
-		"""
+                :type goal: PickUpPoseGoal
+                """
         # error_code = self.place()
         if self.place():
-             place_result = True
+            place_result = True
         else:
-             place_result = False
-        
+            place_result = False
+
         return placeResponse(place_result)
-    
+
     def tuck_arm(self):
         client = actionlib.SimpleActionClient("play_motion", PlayMotionAction)
         client.wait_for_server()
@@ -217,34 +209,26 @@ class Grasp_Place():
         client.wait_for_result(rospy.Duration(10.0))
         rospy.loginfo("Arm tucked.")
 
-    
-    def grasp(self,object_pose):
+    def grasp(self, object_pose):
         """
         pick up the object
 
         object_pose:Pose
         """
 
-        #add the table_storage
+        # add the table_storage
 
-<<<<<<< HEAD
-        self.add_collision_objects('table_grasp',[0.8,1.0,0.72],[1.2,0,0.36]) 
+        self.add_collision_objects(
+            'table_grasp', [0.8, 1.0, 0.72], [1.2, 0, 0.36])
 
         # object_pose.orientation = Quaternion(-0.47,-0.53,-0.47,0.51)
         # object_pose.orientation = Quaternion(0.3095,0.6370,0.6345,0.3090)
         orientation = quaternion_from_euler(-3.14/2, 0.0, 0.0)
-=======
-        # self.add_collision_objects('table_grasp',[0.8,1.0,0.72],[1.2,0,0.36]) 
-
-        # object_pose.orientation = Quaternion(-0.47,-0.53,-0.47,0.51)
-        # object_pose.orientation = Quaternion(0.3095,0.6370,0.6345,0.3090)
-        orientation = quaternion_from_euler(3.14/2, 0.0, 0.0) #TODO: how about 0
->>>>>>> b4d63f7c765fbd37eeb9752195946138138ecfec
         object_pose.orientation.x = orientation[0]
         object_pose.orientation.y = orientation[1]
         object_pose.orientation.z = orientation[2]
         object_pose.orientation.w = orientation[3]
-        #move to the pre-grasp pose
+        # move to the pre-grasp pose
 
         # self.preparation()
         self.open_gripper()
@@ -257,49 +241,30 @@ class Grasp_Place():
         rospy.loginfo("Object pose: %s", object_pose)
 
         # the sensor of gripper is 5 cm behind
-        object_pose.position.x -=0.15
+        object_pose.position.x -= 0.15
 
         # setted_workspace = [0.2,-0.28,0.75,0.91,2,1.3]
 
         # self.move_group.set_workspace(setted_workspace)
         # add grasp waypoints
-<<<<<<< HEAD
         self.move_group.set_max_acceleration_scaling_factor(0.8)
         scale = 1
         waypoints = []
         wpose = object_pose
-        wpose.position.x -= scale *0.1
+        wpose.position.x -= scale * 0.1
         waypoints.append(copy.deepcopy(wpose))
 
-        wpose.position.x +=scale *0.1
+        wpose.position.x += scale * 0.1
         waypoints.append(copy.deepcopy(wpose))
-        (plan,fraction)=self.move_group.compute_cartesian_path(waypoints,0.01,0.0)
-        self.move_group.execute(plan,wait=True)
-=======
-        scale = 4
-        waypoints = []
-        wpose = object_pose
-        wpose.position.z += scale *0.2
-        wpose.position.x -= scale *0.1
-        waypoints.append(copy.deepcopy(wpose))
+        (plan, fraction) = self.move_group.compute_cartesian_path(
+            waypoints, 0.01, 0.0)
+        self.move_group.execute(plan, wait=True)
 
-        wpose.position.z -=scale *0.1
-        waypoints.append(copy.deepcopy(wpose))
-
-        wpose.position.z -=scale *0.1
-        waypoints.append(copy.deepcopy(wpose))
-
-        wpose.position.x +=scale *0.1
-        waypoints.append(copy.deepcopy(wpose))
-        (plan,fraction)=self.move_group.compute_cartesian_path(waypoints,0.01,0.0)
-        self.move_group.excute(plan,wait=True)
->>>>>>> b4d63f7c765fbd37eeb9752195946138138ecfec
-
-        #allow replanning
+        # allow replanning
         # self.move_group.allow_replanning(value = True)
 
         # self.move_group.set_pose_target(object_pose)
-    
+
         # self.move_group.go(wait=True)
 
         # self.move_group.stop()
@@ -307,7 +272,6 @@ class Grasp_Place():
         # self.move_group.clear_pose_targets()
 
         # rospy.sleep(3)
-
 
         # close the gripper
         rospy.loginfo("close the gripper")
@@ -336,7 +300,6 @@ class Grasp_Place():
 
         self.preparation()
 
-
         # remove the table
         self.scene.remove_world_object("table_grasp")
 
@@ -344,12 +307,12 @@ class Grasp_Place():
 
         return True
 
-
     def place(self):
 
-        #add the table_place
+        # add the table_place
 
-        self.add_collision_objects('table_place',[0.4,0.4,0.4],[0.5,0,0.2]) #TODO: change the paremeter
+        self.add_collision_objects('table_place', [0.4, 0.4, 0.4], [
+                                   0.5, 0, 0.2])  # TODO: change the paremeter
 
         # self.preparation(object_pose)
 
@@ -399,9 +362,6 @@ class Grasp_Place():
         response = EmptyResponse()
 
         return True
-       
-
-
 
     def close_gripper(self):
         """
@@ -409,19 +369,21 @@ class Grasp_Place():
         """
         # close the gripper
         rospy.loginfo('close gripper')
-        gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
+        gripper_controller = rospy.Publisher(
+            '/gripper_controller/command', JointTrajectory, queue_size=1)
 
         # set a loop to close the gripper
         for i in range(10):
             trajctory = JointTrajectory()
-            trajctory.joint_names = ['gripper_left_finger_joint', 'gripper_right_finger_joint']
+            trajctory.joint_names = [
+                'gripper_left_finger_joint', 'gripper_right_finger_joint']
 
             point = JointTrajectoryPoint()
             # gripper joints cfg
             point.positions = [0.0, 0.0]
 
             # set the time of the gripper to close
-            point.time_from_start = rospy.Duration(0.5) # ToDO
+            point.time_from_start = rospy.Duration(0.5)  # ToDO
 
             trajctory.points.append(point)
 
@@ -430,13 +392,15 @@ class Grasp_Place():
             rospy.sleep(0.5)
 
     def open_gripper(self):
-        
+
         rospy.loginfo('open gripper')
-        gripper_controller = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=1)
+        gripper_controller = rospy.Publisher(
+            '/gripper_controller/command', JointTrajectory, queue_size=1)
 
         for i in range(10):
             trajctory = JointTrajectory()
-            trajctory.joint_names = ['gripper_left_finger_joint', 'gripper_right_finger_joint']
+            trajctory.joint_names = [
+                'gripper_left_finger_joint', 'gripper_right_finger_joint']
 
             point = JointTrajectoryPoint()
             # gripper joints cfg
@@ -451,18 +415,21 @@ class Grasp_Place():
 
             rospy.sleep(0.2)
 
+
 if __name__ == "__main__":
 
     rospy.init_node("grasp_object")
 
     moveit_commander.roscpp_initialize(sys.argv)
 
-    gp=Grasp_Place()
+    gp = Grasp_Place()
 
-    grasp_service = rospy.Service("restaurant/grasp_object", grasp , gp.grasp_cb)
+    grasp_service = rospy.Service(
+        "restaurant/grasp_object", grasp, gp.grasp_cb)
 
-    place_service = rospy.Service("restaurant/place_object", place , gp.place_cb)
-    
+    place_service = rospy.Service(
+        "restaurant/place_object", place, gp.place_cb)
+
     # ps = Pose()
     # ps.position.x = 0.5
     # ps.position.y = 0.5
@@ -487,14 +454,8 @@ if __name__ == "__main__":
     # # gp.postgrasp()
     # gp.place()
 
-    
     # rospy.loginfo("Grasp_Object is ready.")
 
     # gp.open_gripper()
 
     rospy.spin()
-
-
-
-
-

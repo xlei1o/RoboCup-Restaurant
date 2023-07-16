@@ -7,14 +7,16 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from darknet_ros_msgs.msg import BoundingBoxes
 from objects_msgs.msg import objects, single
 from wit_ros.srv import ListenAndInterpret, ListenAndInterpretResponse
-from object_detect.srv import Customer_Interest
+from customer_interest_detection.srv import Customer_Interest
 from restaurant import functions
 from object_grasp.srv import grasp, place
+
 
 class Say(smach.State):
     def __init__(self, text):
         smach.State.__init__(self, outcomes=['success', 'failure'])
         self.text = text
+
     def execute(self, userdata):
         if functions.Speak(self.text):
             return 'success'
@@ -25,15 +27,16 @@ class Say(smach.State):
 class Navigation(smach.State):
     def __init__(self, coordinate=None):
         smach.State.__init__(self, outcomes=['success', 'failure', 'preempted'],
-                             input_keys=['grasp_ready'], 
+                             input_keys=['grasp_ready'],
                              output_keys=['server_pos'])
         self.coordinate = coordinate
+
     def execute(self, userdata):
         rospy.loginfo('Navigating...')
         client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         client.wait_for_server()
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map" 
+        goal.target_pose.header.frame_id = "map"
         if self.coordinate is not None:
             goal.target_pose.pose.position.x = self.coordinate['x']
             goal.target_pose.pose.position.y = self.coordinate['y']
@@ -42,21 +45,22 @@ class Navigation(smach.State):
             client.send_goal(goal)
             client.wait_for_result()
             if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
-                userdata.server_pos = [self.coordinate['x'], self.coordinate['y'], self.coordinate['z'], self.coordinate['w']]
+                userdata.server_pos = [
+                    self.coordinate['x'], self.coordinate['y'], self.coordinate['z'], self.coordinate['w']]
                 return 'success'
             else:
                 return 'failure'
         else:
-                goal.target_pose.pose.position.x = userdata.server_pos[0]
-                goal.target_pose.pose.position.y = userdata.server_pos[1]
-                goal.target_pose.pose.orientation.z = userdata.server_pos[2]
-                goal.target_pose.pose.orientation.w = userdata.server_pos[3]
-                client.send_goal(goal)
-                client.wait_for_result()
-                if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
-                    return 'preempted'
-                else:
-                    return 'failure'
+            goal.target_pose.pose.position.x = userdata.server_pos[0]
+            goal.target_pose.pose.position.y = userdata.server_pos[1]
+            goal.target_pose.pose.orientation.z = userdata.server_pos[2]
+            goal.target_pose.pose.orientation.w = userdata.server_pos[3]
+            client.send_goal(goal)
+            client.wait_for_result()
+            if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
+                return 'preempted'
+            else:
+                return 'failure'
 
 
 class Calling(smach.State):
@@ -64,10 +68,12 @@ class Calling(smach.State):
         smach.State.__init__(self, outcomes=['success', 'failure'])
 
     def execute(self, userdata):
+        functions.HeadAction(0.0, 0.0)
         rospy.wait_for_service('/restaurant/customer_interest')
-        service_proxy = rospy.ServiceProxy('/restaurant/customer_interest', Customer_Interest)
+        service_proxy = rospy.ServiceProxy(
+            '/restaurant/customer_interest', Customer_Interest)
         response = service_proxy()
-        if response.customer_interest:       
+        if response.customer_interest:
             return 'success'
         else:
             return 'failure'
@@ -77,28 +83,31 @@ class LookAround(smach.State):
     def __init__(self, pan):
         smach.State.__init__(self, outcomes=['success', 'failure'])
         self.pan = pan
+
     def execute(self, userdata):
         return functions.HeadAction(self.pan, 0.0)
 
-        
+
 class ObjectDetection(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['success', 'failure', 'preempted'],
-                             input_keys=['grasp_ready', 'exist_objects'], 
+                             input_keys=['grasp_ready', 'exist_objects'],
                              output_keys=['exist_objects'])
         # self.object_pub = rospy.Publisher('/restaurant/objects', objects, queue_size=10)
         self.names = None
-        functions.HeadAction(0.0, -0.8)
 
     def callback(self, box):
+        functions.HeadAction(0.0, -0.6)
+        rospy.sleep(1.0)
         number = len(box.bounding_boxes)
         self.names = []
         for i in range(number):
             self.names.append(box.bounding_boxes[i].Class)
-        
+
     def execute(self, userdata):
         rospy.sleep(5)
-        rospy.Subscriber('/darknet_ros/bounding_boxes', BoundingBoxes, self.callback)
+        rospy.Subscriber('/darknet_ros/bounding_boxes',
+                         BoundingBoxes, self.callback)
         rospy.wait_for_message('/darknet_ros/bounding_boxes', BoundingBoxes)
         userdata.exist_objects = self.names
         rospy.loginfo(userdata.exist_objects)
@@ -108,12 +117,12 @@ class ObjectDetection(smach.State):
             functions.HeadAction(0.0, 0.0)
             return 'success'
 
-            
+
 class Conversation(smach.State):
     def __init__(self, text):
         smach.State.__init__(self, outcomes=['success', 'failure'],
                              input_keys=['exist_objects'],
-                             output_keys=['require_object','grasp_ready'])
+                             output_keys=['require_object', 'grasp_ready'])
         self.text = text
 
     def execute(self, userdata):
@@ -123,19 +132,22 @@ class Conversation(smach.State):
             while not rospy.is_shutdown():
                 print(userdata.exist_objects)
                 rospy.wait_for_service('/restaurant/wit/listen_interpret')
-                service_proxy = rospy.ServiceProxy('/restaurant/wit/listen_interpret', ListenAndInterpret)
+                service_proxy = rospy.ServiceProxy(
+                    '/restaurant/wit/listen_interpret', ListenAndInterpret)
                 response = service_proxy()
                 if response.result != 'nothing':
                     break
                 else:
                     functions.Speak('sorry please say again loudly')
             if response.result in userdata.exist_objects:
-                functions.Speak('okay ' + response.result + ' please wait for a moment')
+                functions.Speak('okay ' + response.result +
+                                ' please wait for a moment')
                 userdata.require_object = response.result
                 userdata.grasp_ready = True
                 break
             else:
-                functions.Speak('sorry we do not have ' + response.result + ' please order something else')
+                functions.Speak('sorry we do not have ' +
+                                response.result + ' please order something else')
 
         rospy.loginfo(response.result)
         return 'success'
@@ -148,7 +160,7 @@ class Pickup(smach.State):
         self.require = None
         self.coordinate = None
 
-    def callback(self, msg):        
+    def callback(self, msg):
         for obj in msg.Objects:
             if self.require == obj.name:
                 self.coordinate = [obj.x, obj.y, obj.z]
@@ -166,7 +178,6 @@ class Pickup(smach.State):
         else:
             return 'failure'
 
-    
 
 class Place(smach.State):
     def __init__(self):
