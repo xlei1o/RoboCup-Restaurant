@@ -38,6 +38,7 @@ void ObjectClustering::update(const ros::Time& time)
   
   objects_msgs::objects msg;
   msg.Objects.resize(detections_.size());
+  ROS_INFO_STREAM(detections_.size());
   for (int i = 0; i < detections_.size(); i++)
   { 
     double x = (detections_[i].xmax - detections_[i].xmin)/2 + detections_[i].xmin;
@@ -163,8 +164,8 @@ std::vector<Eigen::Vector3d> ObjectClustering::clusterCloud(CloudPtr& input)
   pcl::EuclideanClusterExtraction<PointT> ec;
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
-  ec.setClusterTolerance (0.02);
-  ec.setMinClusterSize (100);
+  ec.setClusterTolerance (0.01);
+  ec.setMinClusterSize (50);
   ec.setMaxClusterSize (25000);
   ec.setSearchMethod (tree);
   ec.setInputCloud(input);

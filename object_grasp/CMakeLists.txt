@@ -18,6 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   shape_msgs
   sensor_msgs
+  actionlib
+  play_motion_msgs
 )
 
 
@@ -84,6 +86,7 @@ generate_messages(
   actionlib_msgs
   shape_msgs
   sensor_msgs
+  play_motion_msgs
 )
 
 ################################################
@@ -126,6 +129,7 @@ catkin_package(
   actionlib_msgs
   shape_msgs
   sensor_msgs
+  play_motion_msgs
 )
 
 ###########
