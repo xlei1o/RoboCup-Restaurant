@@ -8,4 +8,15 @@ fixed_coordinates: {
    table_right: {x: -2.6712, y: -2.1944, z: -0.3984, w: 0.9172}
 }
 
+
+pre_grasp: {torso_lift_joint: 1, 
+            arm_1_joint: 1,
+            arm_2_joint: 1,
+            arm_3_joint: 1,
+            arm_4_joint: 1,
+            arm_5_joint: 1,
+            arm_6_joint: 1,
+            arm_7_joint: 1}
+
+
 wit_api_key: GG424C7762FEFSTDI2BWR3MZQMO6UPUP

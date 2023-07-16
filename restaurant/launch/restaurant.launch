@@ -3,14 +3,10 @@
 
   <!-- Preload nodes -->
   <node name="restaurant_workflow" type="run.py" pkg="restaurant" output="screen" />
-  <node name="object_clustering_node" pkg="object_clustering" type="object_clustering_node" output="screen"/>
   <node name="customer_interest_node" pkg="object_detect" type="customer_interest_server.py" output="screen"/>
-  
-  <!-- Navigation parameters -->
-  <rosparam file="$(find restaurant)/config/fixed_coordinates.yaml"/>
+  <node name="wit_ros_node" pkg="wit_ros" type="wit_node.py" output="screen"/>
 
-
-  <!-- The rest of the params are specific to this plugin -->
+  <!-- Parameters -->
   <rosparam file="$(find restaurant)/config/fixed_coordinates.yaml"/>
 
 </launch>

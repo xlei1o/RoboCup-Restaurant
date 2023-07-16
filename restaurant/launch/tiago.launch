@@ -21,7 +21,7 @@
       <remap from="camera/rgb/image_raw"  to="$(arg image)" />
   </node>
   <!---->
-
+  <node name="object_clustering_node" pkg="object_clustering" type="object_clustering_node" output="screen"/>
     <!-- Launch rviz -->
  	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find restaurant)/launch/rviz/tiago.rviz" required="true" />
 
