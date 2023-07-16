@@ -141,7 +141,7 @@ class Grasp_Place():
     def postgrasp(self):
 
         rospy.loginfo("start post_pose")
-        arm_group = moveit_commander.MoveGrresponseoupCommander('arm_torso')
+        arm_group = moveit_commander.MoveGroupCommander('arm_torso')
         target_angles = [0.234, 1.36, 0, -2.81, 1.54, 1.87, 1.34, 0.35]
         arm_group.set_joint_value_target(target_angles)
         arm_group.set_max_acceleration_scaling_factor(0.8)

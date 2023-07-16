@@ -140,7 +140,7 @@ class WitRos(object):
         rospy.loginfo("say something")
         os.system("rec output.wav trim 0 05")
 
-        with sr.AudioFile("./output.wav") as source:
+        with sr.AudioFile("/home/yi/.ros/output.wav") as source:
             audio = r.record(source)
 
         try:

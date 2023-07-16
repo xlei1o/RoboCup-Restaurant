@@ -68,12 +68,12 @@ class Calling(smach.State):
         smach.State.__init__(self, outcomes=['success', 'failure'])
 
     def execute(self, userdata):
-        functions.HeadAction(0.0, 0.0)
         rospy.wait_for_service('/restaurant/customer_interest')
         service_proxy = rospy.ServiceProxy(
             '/restaurant/customer_interest', Customer_Interest)
         response = service_proxy()
         if response.customer_interest:
+            functions.HeadAction(0.0, 0.0)
             return 'success'
         else:
             return 'failure'
@@ -97,7 +97,6 @@ class ObjectDetection(smach.State):
         self.names = None
 
     def callback(self, box):
-        functions.HeadAction(0.0, -0.6)
         rospy.sleep(1.0)
         number = len(box.bounding_boxes)
         self.names = []
@@ -105,23 +104,28 @@ class ObjectDetection(smach.State):
             self.names.append(box.bounding_boxes[i].Class)
 
     def execute(self, userdata):
-        rospy.sleep(5)
-        rospy.Subscriber('/darknet_ros/bounding_boxes',
-                         BoundingBoxes, self.callback)
-        rospy.wait_for_message('/darknet_ros/bounding_boxes', BoundingBoxes)
-        userdata.exist_objects = self.names
-        rospy.loginfo(userdata.exist_objects)
-        if userdata.grasp_ready:
-            return 'preempted'
-        else:
+        functions.HeadAction(0.0, -0.6)
+        if not userdata.grasp_ready:
+            rospy.sleep(5)
+            rospy.Subscriber('/darknet_ros/bounding_boxes',
+                             BoundingBoxes, self.callback)
+            rospy.wait_for_message(
+                '/darknet_ros/bounding_boxes', BoundingBoxes)
+            userdata.exist_objects = self.names
+            rospy.loginfo(userdata.exist_objects)
             functions.HeadAction(0.0, 0.0)
             return 'success'
+        else:
+
+            print(userdata.grasp_ready)
+
+            return 'preempted'
 
 
 class Conversation(smach.State):
     def __init__(self, text):
         smach.State.__init__(self, outcomes=['success', 'failure'],
-                             input_keys=['exist_objects'],
+                             input_keys=['exist_objects', 'grasp_ready'],
                              output_keys=['require_object', 'grasp_ready'])
         self.text = text
 
@@ -159,24 +163,37 @@ class Pickup(smach.State):
                              input_keys=['require_object'])
         self.require = None
         self.coordinate = None
+        self.found_object = False
 
     def callback(self, msg):
         for obj in msg.Objects:
-            if self.require == obj.name:
+            print(obj.name)
+            if obj.name == self.require:
                 self.coordinate = [obj.x, obj.y, obj.z]
+                self.found_object = True
 
     def execute(self, userdata):
-        self.require = userdata.require_object
-        rospy.Subscriber('/restaurant/objects', objects, self.callback)
-        rospy.wait_for_message('/restaurant/objects', objects)
-        request = grasp()
-        request.x, request.y, request.z = self.coordinate[0], self.coordinate[1], self.coordinate[2]
-        rospy.wait_for_service('/restaurant/grasp_object')
-        service_proxy = rospy.ServiceProxy('/restaurant/grasp_object', grasp)
-        if service_proxy(request):
-            return 'success'
-        else:
-            return 'failure'
+        while not rospy.is_shutdown():
+            self.require = userdata.require_object
+            rospy.Subscriber('/restaurant/objects', objects, self.callback)
+            rospy.wait_for_message('/restaurant/objects', objects)
+
+            # request = grasp(
+            #     self.coordinate[0], self.coordinate[1], self.coordinate[2])
+            # grasp_srv.request.x = self.coordinate[0]
+            # grasp_srv.request.y = self.coordinate[1]
+            # grasp_srv.request.z = self.coordinate[2]
+            rospy.wait_for_service('/restaurant/grasp_object')
+
+            if self.found_object:
+                self.found_object = False
+                service_proxy = rospy.ServiceProxy(
+                    '/restaurant/grasp_object', grasp)
+                print(self.coordinate)
+                if service_proxy(1.7, -0.03, 0.83):
+                    break
+
+        return 'success'
 
 
 class Place(smach.State):

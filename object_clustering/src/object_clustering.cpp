@@ -14,9 +14,9 @@ bool ObjectClustering::initialize(ros::NodeHandle &nh)
     object_detections_sub_ = nh.subscribe("/darknet_ros/bounding_boxes", 1, &ObjectClustering::detectionCallback, this);
     camera_info_sub_ = nh.subscribe("/xtion/rgb/camera_info", 1, &ObjectClustering::cameraInfoCallback, this);
     objects_coordinate_pub_ = nh.advertise<objects_msgs::objects>("/restaurant/objects", 1);
-    objects_cloud_pub_ = nh.advertise<PointCloud>("/segmentation/clusters_points", 10);
-    plane_cloud_pub_ = nh.advertise<PointCloud>("/segmentation/plane_points", 10);
-    pre_cloud_pub_ = nh.advertise<PointCloud>("/segmentation/pre_points", 10);
+    // objects_cloud_pub_ = nh.advertise<PointCloud>("/segmentation/clusters_points", 10);
+    // plane_cloud_pub_ = nh.advertise<PointCloud>("/segmentation/plane_points", 10);
+    // pre_cloud_pub_ = nh.advertise<PointCloud>("/segmentation/pre_points", 10);
     raw_cloud_.reset(new PointCloud);
     preprocessed_cloud_.reset(new PointCloud);
     plane_cloud_.reset(new PointCloud);
@@ -110,7 +110,7 @@ bool ObjectClustering::preProcessCloud(CloudPtr &input, CloudPtr &output)
     // pass_x.setFilterLimits(0.0, 0.98);
     // pass_x.filter(*output);
 
-    pre_cloud_pub_.publish(output);
+    // pre_cloud_pub_.publish(output);
     ROS_INFO_STREAM("point number: " << transf_cloud->points.size());
 
     return true;
@@ -191,8 +191,8 @@ bool ObjectClustering::segmentCloud(CloudPtr &input, CloudPtr &objects_cloud)
 
     pcl::transformPointCloud(*filterd_cloud, *objects_cloud, T_plane_base.inverse());
 
-    plane_cloud_pub_.publish(plane_cloud);
-    objects_cloud_pub_.publish(objects_cloud);
+    // plane_cloud_pub_.publish(plane_cloud);
+    // objects_cloud_pub_.publish(objects_cloud);
     return true;
 }
 

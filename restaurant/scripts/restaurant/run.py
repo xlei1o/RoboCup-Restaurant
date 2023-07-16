@@ -13,6 +13,9 @@ def main():
     sm = smach.StateMachine(outcomes=['succeeded', 'failure', 'preempted'])
     # Define user data for state machine
     sm.userdata.grasp_ready = False
+    sm.userdata.exist_objects = None
+    sm.userdata.require_object = 'cup'
+    sm.userdata.server_pos = None
 
     _standby = rospy.get_param('/fixed_coordinates/stand_by')
     _storeageTable = rospy.get_param('/fixed_coordinates/storage_table')
@@ -78,6 +81,10 @@ def main():
 
         smach.StateMachine.add('PLACE', states.Place(),
                                transitions={'success': 'STAND_BY',
+                                            'failure': 'failure'})
+
+        smach.StateMachine.add('AA', states.Pickup(),
+                               transitions={'success': 'failure',
                                             'failure': 'failure'})
 
     # Use a introspection for visulize the state machine
