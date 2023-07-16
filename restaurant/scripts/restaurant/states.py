@@ -27,7 +27,7 @@ class Say(smach.State):
 class Navigation(smach.State):
     def __init__(self, coordinate=None):
         smach.State.__init__(self, outcomes=['success', 'failure', 'preempted'],
-                             input_keys=['grasp_ready'],
+                             input_keys=['grasp_ready','server_pos'],
                              output_keys=['server_pos'])
         self.coordinate = coordinate
 
@@ -51,10 +51,10 @@ class Navigation(smach.State):
             else:
                 return 'failure'
         else:
-            goal.target_pose.pose.position.x = userdata.server_pos[0]
-            goal.target_pose.pose.position.y = userdata.server_pos[1]
-            goal.target_pose.pose.orientation.z = userdata.server_pos[2]
-            goal.target_pose.pose.orientation.w = userdata.server_pos[3]
+            goal.target_pose.pose.position.x = 0.095037
+            goal.target_pose.pose.position.y = 0.12586
+            goal.target_pose.pose.orientation.z = -0.5222
+            goal.target_pose.pose.orientation.w = 0.85282
             client.send_goal(goal)
             client.wait_for_result()
             if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
@@ -163,35 +163,28 @@ class Pickup(smach.State):
                              input_keys=['require_object'])
         self.require = None
         self.coordinate = None
-        self.found_object = False
 
     def callback(self, msg):
         for obj in msg.Objects:
-            print(obj.name)
+            # print(obj.name)
             if obj.name == self.require:
                 self.coordinate = [obj.x, obj.y, obj.z]
-                self.found_object = True
 
     def execute(self, userdata):
         while not rospy.is_shutdown():
             self.require = userdata.require_object
-            rospy.Subscriber('/restaurant/objects', objects, self.callback)
-            rospy.wait_for_message('/restaurant/objects', objects)
+            while not rospy.is_shutdown():
+                rospy.Subscriber('/restaurant/objects', objects, self.callback)
+                rospy.wait_for_message('/restaurant/objects', objects)
+                if self.coordinate is not None:
+                    if self.coordinate[2] > 0.65:
+                        break
 
-            # request = grasp(
-            #     self.coordinate[0], self.coordinate[1], self.coordinate[2])
-            # grasp_srv.request.x = self.coordinate[0]
-            # grasp_srv.request.y = self.coordinate[1]
-            # grasp_srv.request.z = self.coordinate[2]
             rospy.wait_for_service('/restaurant/grasp_object')
-
-            if self.found_object:
-                self.found_object = False
-                service_proxy = rospy.ServiceProxy(
-                    '/restaurant/grasp_object', grasp)
-                print(self.coordinate)
-                if service_proxy(1.7, -0.03, 0.83):
-                    break
+            service_proxy = rospy.ServiceProxy('/restaurant/grasp_object', grasp)
+            print(self.coordinate)
+            if service_proxy(self.coordinate[0], self.coordinate[1], 0.83):
+                break
 
         return 'success'
 

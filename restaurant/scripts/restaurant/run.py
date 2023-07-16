@@ -14,7 +14,7 @@ def main():
     # Define user data for state machine
     sm.userdata.grasp_ready = False
     sm.userdata.exist_objects = None
-    sm.userdata.require_object = 'cup'
+    sm.userdata.require_object = None
     sm.userdata.server_pos = None
 
     _standby = rospy.get_param('/fixed_coordinates/stand_by')
@@ -76,7 +76,7 @@ def main():
 
         smach.StateMachine.add('NAV_TO_SERVER', states.Navigation(),
                                transitions={'success': 'failure',
-                                            'preempted': 'NAV_TO_SERVER',
+                                            'preempted': 'PLACE',
                                             'failure': 'failure'})
 
         smach.StateMachine.add('PLACE', states.Place(),
@@ -88,7 +88,7 @@ def main():
                                             'failure': 'failure'})
 
     # Use a introspection for visulize the state machine
-    sm.set_initial_state(['NAV_TO_STOREAGE'])
+    # sm.set_initial_state(['AA'])
     sis = smach_ros.IntrospectionServer('example_server', sm, '/SM_ROOT')
     sis.start()
     # Execute SMACH plan
