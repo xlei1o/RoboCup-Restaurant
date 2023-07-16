@@ -194,11 +194,11 @@ class Grasp_Place():
 
         #add the table_storage
 
-        # self.add_collision_objects('table_grasp',[0.8,1.0,0.72],[1.2,0,0.36]) #TODO: change the paremeter
+        # self.add_collision_objects('table_grasp',[0.8,1.0,0.72],[1.2,0,0.36]) 
 
         # object_pose.orientation = Quaternion(-0.47,-0.53,-0.47,0.51)
         # object_pose.orientation = Quaternion(0.3095,0.6370,0.6345,0.3090)
-        orientation = quaternion_from_euler(3.14/2, 0.0, 0.0)
+        orientation = quaternion_from_euler(3.14/2, 0.0, 0.0) #TODO: how about 0
         object_pose.orientation.x = orientation[0]
         object_pose.orientation.y = orientation[1]
         object_pose.orientation.z = orientation[2]
@@ -220,19 +220,37 @@ class Grasp_Place():
         # setted_workspace = [0.2,-0.28,0.75,0.91,2,1.3]
 
         # self.move_group.set_workspace(setted_workspace)
+        # add grasp waypoints
+        scale = 4
+        waypoints = []
+        wpose = object_pose
+        wpose.position.z += scale *0.2
+        wpose.position.x -= scale *0.1
+        waypoints.append(copy.deepcopy(wpose))
+
+        wpose.position.z -=scale *0.1
+        waypoints.append(copy.deepcopy(wpose))
+
+        wpose.position.z -=scale *0.1
+        waypoints.append(copy.deepcopy(wpose))
+
+        wpose.position.x +=scale *0.1
+        waypoints.append(copy.deepcopy(wpose))
+        (plan,fraction)=self.move_group.compute_cartesian_path(waypoints,0.01,0.0)
+        self.move_group.excute(plan,wait=True)
 
         #allow replanning
-        self.move_group.allow_replanning(value = True)
+        # self.move_group.allow_replanning(value = True)
 
-        self.move_group.set_pose_target(object_pose)
+        # self.move_group.set_pose_target(object_pose)
     
-        self.move_group.go(wait=True)
+        # self.move_group.go(wait=True)
 
-        self.move_group.stop()
+        # self.move_group.stop()
 
-        self.move_group.clear_pose_targets()
+        # self.move_group.clear_pose_targets()
 
-        rospy.sleep(3)
+        # rospy.sleep(3)
 
 
         # close the gripper
