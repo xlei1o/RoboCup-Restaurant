@@ -27,8 +27,8 @@ class Say(smach.State):
 class Navigation(smach.State):
     def __init__(self, coordinate=None):
         smach.State.__init__(self, outcomes=['success', 'failure', 'preempted'],
-                             input_keys=['grasp_ready','server_pos'],
-                             output_keys=['server_pos'])
+                             input_keys=['grasp_ready','serve_ready', 'serve_pos'],
+                             output_keys=['serve_pos'])
         self.coordinate = coordinate
 
     def execute(self, userdata):
@@ -45,19 +45,25 @@ class Navigation(smach.State):
             client.send_goal(goal)
             client.wait_for_result()
             if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
-                userdata.server_pos = [
-                    self.coordinate['x'], self.coordinate['y'], self.coordinate['z'], self.coordinate['w']]
+                if userdata.serve_ready:
+                    userdata.serve_pos = [
+                        self.coordinate['x'], self.coordinate['y'], self.coordinate['z'], self.coordinate['w']]
                 return 'success'
             else:
                 return 'failure'
         else:
-            goal.target_pose.pose.position.x = 0.095037
-            goal.target_pose.pose.position.y = 0.12586
-            goal.target_pose.pose.orientation.z = -0.5222
-            goal.target_pose.pose.orientation.w = 0.85282
+            # goal.target_pose.pose.position.x = 0.095037
+            # goal.target_pose.pose.position.y = 0.12586
+            # goal.target_pose.pose.orientation.z = -0.5222
+            # goal.target_pose.pose.orientation.w = 0.85282
+            goal.target_pose.pose.position.x = userdata.serve_pos[0]
+            goal.target_pose.pose.position.y = userdata.serve_pos[1]
+            goal.target_pose.pose.orientation.z = userdata.serve_pos[2]
+            goal.target_pose.pose.orientation.w = userdata.serve_pos[3]
             client.send_goal(goal)
             client.wait_for_result()
             if client.get_state() == actionlib.GoalStatus.SUCCEEDED:
+                userdata.serve_ready = False
                 return 'preempted'
             else:
                 return 'failure'
@@ -65,7 +71,9 @@ class Navigation(smach.State):
 
 class Calling(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['success', 'failure'])
+        smach.State.__init__(self, outcomes=['success', 'failure'],
+                             input_keys=['serve_ready'],
+                             output_keys=['serve_ready'])
 
     def execute(self, userdata):
         rospy.wait_for_service('/restaurant/customer_interest')
@@ -74,6 +82,7 @@ class Calling(smach.State):
         response = service_proxy()
         if response.customer_interest:
             functions.HeadAction(0.0, 0.0)
+            userdata.serve_ready = True
             return 'success'
         else:
             return 'failure'
@@ -116,9 +125,6 @@ class ObjectDetection(smach.State):
             functions.HeadAction(0.0, 0.0)
             return 'success'
         else:
-
-            print(userdata.grasp_ready)
-
             return 'preempted'
 
 
@@ -130,7 +136,10 @@ class Conversation(smach.State):
         self.text = text
 
     def execute(self, userdata):
+        objects_words = ' '.join(userdata.exist_objects)
         functions.Speak(self.text)
+        rospy.sleep(0.1)
+        functions.Speak('currently we have ' + objects_words)
         rospy.sleep(0.1)
         while not rospy.is_shutdown():
             while not rospy.is_shutdown():
@@ -178,9 +187,10 @@ class Pickup(smach.State):
                 rospy.wait_for_message('/restaurant/objects', objects)
                 if self.coordinate is not None:
                     if self.coordinate[2] > 0.65:
+                        self.coordinate[1] += self.coordinate[1]/10
                         break
 
-            rospy.wait_for_service('/restaurant/grasp_object')
+            # rospy.wait_for_service('/restaurant/grasp_object')
             service_proxy = rospy.ServiceProxy('/restaurant/grasp_object', grasp)
             print(self.coordinate)
             if service_proxy(self.coordinate[0], self.coordinate[1], 0.83):

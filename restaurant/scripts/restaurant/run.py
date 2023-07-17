@@ -15,19 +15,13 @@ def main():
     sm.userdata.grasp_ready = False
     sm.userdata.exist_objects = None
     sm.userdata.require_object = None
-    sm.userdata.server_pos = None
+    sm.userdata.serve_pos = None
+    sm.userdata.serve_ready = False
 
     _standby = rospy.get_param('/fixed_coordinates/stand_by')
     _storeageTable = rospy.get_param('/fixed_coordinates/storage_table')
     _leftTable = rospy.get_param('/fixed_coordinates/table_left')
     _rightTable = rospy.get_param('/fixed_coordinates/table_right')
-    _preGrasp = rospy.get_param('/pre_grasp')
-
-    # WIT_API_KEY = rospy.get_param('/wit_api_key')
-    # ########## Starting Task Manager #######
-
-    # wr = WitRos(WIT_API_KEY)  # speech recognition
-    # wr.start()
 
     with sm:
         smach.StateMachine.add('NAV_TO_STOREAGE', states.Navigation(_storeageTable),
@@ -71,10 +65,10 @@ def main():
                                             'failure': 'failure'})
 
         smach.StateMachine.add('PICKUP', states.Pickup(),
-                               transitions={'success': 'NAV_TO_SERVER',
+                               transitions={'success': 'NAV_TO_SERVE',
                                             'failure': 'failure'})
 
-        smach.StateMachine.add('NAV_TO_SERVER', states.Navigation(),
+        smach.StateMachine.add('NAV_TO_SERVE', states.Navigation(),
                                transitions={'success': 'failure',
                                             'preempted': 'PLACE',
                                             'failure': 'failure'})
@@ -83,12 +77,12 @@ def main():
                                transitions={'success': 'STAND_BY',
                                             'failure': 'failure'})
 
-        smach.StateMachine.add('AA', states.Pickup(),
-                               transitions={'success': 'failure',
-                                            'failure': 'failure'})
+        # smach.StateMachine.add('AA', states.Pickup(),
+        #                        transitions={'success': 'failure',
+        #                                     'failure': 'failure'})
 
     # Use a introspection for visulize the state machine
-    # sm.set_initial_state(['AA'])
+    sm.set_initial_state(['NAV_TO_STOREAGE'])
     sis = smach_ros.IntrospectionServer('example_server', sm, '/SM_ROOT')
     sis.start()
     # Execute SMACH plan
